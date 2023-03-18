@@ -25,11 +25,14 @@ class LeggedEnv(gym.Env):
         planeId = p.loadURDF("plane.urdf")
         p.setGravity(0, 0, -9.81)
 
-        self.wood = Surface(
+        self.surface = Surface(
             texture_path="wood.png",
             lateral_friction=1.0,
             spinning_friction=1.0,
-            rolling_friction=0.0)
+            rolling_friction=0.01)
+        
+        self.spawn_robot()
+        self.spawn_surface()
 
     def spawn_robot(self):
         """
@@ -37,12 +40,12 @@ class LeggedEnv(gym.Env):
         """
         # Set the start pose of the robot
         self.robot_start_pos = [0, 0, 0]
-        self.robot_start_rpy = [0, 0, 0]
+        self.robot_start_rpy = [90, 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
         # Load the robot URDF into PyBullet
         self.robot = p.loadURDF(
-            "urdf/robot.urdf", 
+            "assembly/Assem1.SLDASM/urdf/Assem1.SLDASM.urdf", 
             self.robot_start_pos, 
             self.robot_start_orn)
 
