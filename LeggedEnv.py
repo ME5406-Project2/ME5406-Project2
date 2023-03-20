@@ -31,6 +31,9 @@ class LeggedEnv(gym.Env):
             spinning_friction=5.0,
             rolling_friction=0.0)
         
+        # Store observations in dict
+        self.obs = {}
+        
         self.spawn_robot()
         # self.spawn_surface()
 
@@ -77,14 +80,19 @@ class LeggedEnv(gym.Env):
         for i in range(self.num_of_joints):
             p.resetJointState(self.robot, self.actuators[i], self.start_joint_pos[i])
         
-        # Set all the motors to velocity control
+        # Set all the motors to position control
         p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.POSITION_CONTROL)
+        # p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.VELOCITY_CONTROL)
 
         # Upper and lower joint indeces
         self.upper_joint_indeces = [0, 2, 4, 6]
         self.lower_joint_indeces = [1, 3, 5, 7]
 
-    def cpg_controller(self, t):
+        # Enable force torque sensors on all actuator joints
+        for joint in self.actuators:
+            p.enableJointForceTorqueSensor(self.robot, joint, 1)
+
+    def cpg_position_controller(self, t):
         
         # Set the CPG parameters
         self.frequency = 3
@@ -99,12 +107,85 @@ class LeggedEnv(gym.Env):
         back_left_leg_pos = self.amplitude * np.sin(
             2 * np.pi * self.frequency * t + np.pi + self.phase_offset)
         back_right_leg_pos = self.amplitude * np.sin(
-            2 * np.pi * self.frequency * t + 3 * np.pi / 4 + self.phase_offset)
+            2 * np.pi * self.frequency * t + 3 * np.pi / 2 + self.phase_offset)
 
         # Return the CPG output for all 4 legs
         return [front_left_leg_pos, front_right_leg_pos, 
                 back_left_leg_pos, back_right_leg_pos]
-            
+    
+    def get_end_effector_force(self):
+
+        # Append the joint torque forces for each leg
+        joint_T_front_left = []
+        joint_T_front_right = []
+        joint_T_back_left = []
+        joint_T_back_right = []
+        
+        joint_T_front_left.append(p.getJointState(self.robot, self.actuators[0])[3])
+        joint_T_front_left.append(p.getJointState(self.robot, self.actuators[1])[3])
+        joint_T_front_right.append(p.getJointState(self.robot, self.actuators[2])[3])
+        joint_T_front_right.append(p.getJointState(self.robot, self.actuators[3])[3])
+        joint_T_back_left.append(p.getJointState(self.robot, self.actuators[4])[3])
+        joint_T_back_left.append(p.getJointState(self.robot, self.actuators[5])[3])
+        joint_T_back_right.append(p.getJointState(self.robot, self.actuators[6])[3])
+        joint_T_back_right.append(p.getJointState(self.robot, self.actuators[7])[3])
+
+    def get_end_effector_pose(self):
+        
+        front_left_EE_pos = p.getLinkState(self.robot, 1)[0]
+        front_left_EE_orn = p.getLinkState(self.robot, 1)[1]
+
+        front_right_EE_pos = p.getLinkState(self.robot, 3)[0]
+        front_right_EE_orn = p.getLinkState(self.robot, 3)[1]
+
+        back_left_EE_pos = p.getLinkState(self.robot, 5)[0]
+        back_left_EE_orn = p.getLinkState(self.robot, 5)[1]
+
+        back_right_EE_pos = p.getLinkState(self.robot, 7)[0]
+        back_right_EE_orn = p.getLinkState(self.robot, 7)[1]
+
+        legs_pos = np.array([front_left_EE_pos, front_right_EE_pos, 
+                             back_left_EE_pos, back_right_EE_pos])
+        
+        legs_orn = np.array([front_left_EE_orn, front_right_EE_orn, 
+                             back_left_EE_orn, back_right_EE_orn])
+
+        return legs_pos, legs_orn
+
+    def get_observation(self):
+        
+        # Positions of all 8 joints
+        self.joint_positions = np.array([p.getJointState(self.robot, env.actuators[i])[0] 
+                                       for i in range(self.num_of_joints)])
+        
+        # Velocities of all 8 joints
+        self.joint_velocities = np.array([p.getJointState(self.robot, env.actuators[i])[1] 
+                                       for i in range(self.num_of_joints)])
+        
+        # Reaction forces of all 8 joints
+        self.joint_reaction_forces = np.array([p.getJointState(env.robot, env.actuators[i])[2] 
+                                       for i in range(self.num_of_joints)])
+        
+        # Linear and Angular velocity of the robot
+        self.linear_vel = np.array(p.getBaseVelocity(self.robot)[0])
+        self.angular_vel = np.array(p.getBaseVelocity(self.robot)[1])
+
+        # Robot Position
+        self.robot_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
+
+        # Robot Orientation (Quaternion)
+        self.robot_orn = np.array(p.getBasePositionAndOrientation(self.robot)[1])
+
+        # Robot Orientation (Euler Angles)
+        self.robot_rpy = np.array(p.getEulerFromQuaternion(self.robot_orn))
+
+        # Robot end-effector position
+        self.robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
+
+        # Robot end-effector position
+        self.robot_legs_EE_orn = np.array(self.get_end_effector_pose()[1])
+
+
 if __name__ == "__main__":
     env = LeggedEnv()
     # p.setRealTimeSimulation(1)
@@ -113,10 +194,11 @@ if __name__ == "__main__":
         desiredJointVelocities = [1, 1, 1, 1, 1, 1, 1, 1]
         forces = [50] * len(env.actuators)
         p.setJointMotorControlArray(env.robot, env.actuators, controlMode=p.POSITION_CONTROL, targetVelocities=env.start_joint_pos, forces=forces)
-        # p.setJointMotorControlArray(env.robot, env.actuators, controlMode=p.VELOCI TY_CONTROL, targetVelocities=desiredJointVelocities, forces= forces)
+        # p.setJointMotorControlArray(env.robot, env.actuators, controlMode=p.VELOCITY_CONTROL, targetVelocities=desiredJointVelocities, forces= forces)
         # for i in range(env.num_of_joints):
         #     print(i, p.getJointState(env.robot, env.actuators[i]))
-        leg_positions = env.cpg_controller(t)
+        env.get_end_effector_positions()
+        leg_positions = env.cpg_position_controller(t)
         p.setJointMotorControlArray(env.robot, env.upper_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
         p.setJointMotorControlArray(env.robot, env.lower_joint_indeces, 
