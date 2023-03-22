@@ -4,6 +4,7 @@ import pybullet_data
 import time
 import numpy as np
 from Surface import Surface
+from gym.spaces import MultiDiscrete
 
 class LeggedEnv(gym.Env):
     """
@@ -19,23 +20,33 @@ class LeggedEnv(gym.Env):
         # Set visualisation
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-
-        # Load plane to the world and set gravity
-        p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
-        planeId = p.loadURDF("plane.urdf")
-        p.setGravity(0, 0, -9.81)
-
-        self.surface = Surface(
-            texture_path="wood.png",
-            lateral_friction=5.0,
-            spinning_friction=5.0,
-            rolling_friction=0.0)
         
         # Store observations in dict
         self.obs = {}
-        
-        self.spawn_robot()
-        # self.spawn_surface()
+
+        # Define action and observation spaces
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(44,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(
+            low=-1, high=1, shape=(8,5), dtype=np.float32
+        )
+
+        # Termination condition parameter
+        self.termination_pos_dist = 0.2
+        self.max_steps = 10000
+        self.env_step_count = 0
+
+        # Define joint-to-action mapping
+        self.joint_to_action_map = {
+            0: np.array([-10, -5, 0, 5, 10]),
+            1: np.array([-10, -5, 0, 5, 10]),
+            2: np.array([-10, -5, 0, 5, 10]),
+            3: np.array([-10, -5, 0, 5, 10]),
+            4: np.array([-10, -5, 0, 5, 10]),
+            5: np.array([-10, -5, 0, 5, 10]),
+            6: np.array([-10, -5, 0, 5, 10]),
+            7: np.array([-10, -5, 0, 5, 10]),
+        }
 
     def spawn_robot(self):
         """
@@ -80,7 +91,7 @@ class LeggedEnv(gym.Env):
         for i in range(self.num_of_joints):
             p.resetJointState(self.robot, self.actuators[i], self.start_joint_pos[i])
         
-        # Set all the motors to position control
+        # Set all the motors to position or velocity control
         p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.POSITION_CONTROL)
         # p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.VELOCITY_CONTROL)
 
@@ -92,6 +103,80 @@ class LeggedEnv(gym.Env):
         for joint in self.actuators:
             p.enableJointForceTorqueSensor(self.robot, joint, 1)
 
+    def reset(self):
+        # Reset simulation
+        p.resetSimulation()
+        # Load the initial parameters again
+        p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
+        planeId = p.loadURDF("plane.urdf")
+        p.setGravity(0, 0, -9.81)
+
+        # Load surface that the robot will walk on
+        self.surface = Surface(
+            texture_path="wood.png",
+            lateral_friction=1.0,
+            spinning_friction=1.0,
+            rolling_friction=0.0)
+        
+        # Spawn the robot and goal box in simulation
+        self.spawn_robot()
+        self.generate_goal()
+
+        # Step the simulation and return the initial observation
+        p.stepSimulation()
+        time.sleep(1/240)
+
+        return self.get_observation()
+    
+    def step(self, action):
+        joint_velocities = []
+
+        # Find the actions based on pre-defined mappings
+        for joint, index in enumerate(action):
+            joint_velocity = self.joint_to_action_map[joint][index]
+            joint_velocities.append(joint_velocity)
+
+        # Send action velocities to robot joints
+        p.setJointMotorControlArray(env.robot, self.actuators, 
+                                    p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
+        
+        # Step the simulation
+        p.stepSimulation()
+        self.env_step_count += 1
+        
+        # Get the observation
+        observation = self.get_observation()
+
+        # Terminating conditions
+        # Reached goal
+        if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+            done = True
+        # Episode timeout
+        if self.env_step_count >= self.max_steps:
+            done = True
+
+        return observation, done
+        
+    def xyz_obj_dist_to_goal(self):
+
+        dist = np.linalg.norm(self.base_pos - self.goal_pos)
+        print(dist)
+        return dist
+    
+    def generate_goal(self):
+        
+        box_pos = [1, 0, 0]
+        box_orn = p.getQuaternionFromEuler([0, 0, 0])
+
+        self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
+                                                          halfExtents=[0.1, 0.1, 0.1])
+        
+        self.goal_id = p.createMultiBody(baseMass=1,
+                                        baseCollisionShapeIndex=self.box_collision_shape,
+                                        baseVisualShapeIndex=-1,
+                                        basePosition=box_pos,
+                                        baseOrientation=box_orn)
+        
     def cpg_position_controller(self, t):
         
         # Set the CPG parameters
@@ -113,22 +198,63 @@ class LeggedEnv(gym.Env):
         return [front_left_leg_pos, front_right_leg_pos, 
                 back_left_leg_pos, back_right_leg_pos]
     
-    def get_end_effector_force(self):
-
-        # Append the joint torque forces for each leg
-        joint_T_front_left = []
-        joint_T_front_right = []
-        joint_T_back_left = []
-        joint_T_back_right = []
+    def cpg_step(self, t):
         
-        joint_T_front_left.append(p.getJointState(self.robot, self.actuators[0])[3])
-        joint_T_front_left.append(p.getJointState(self.robot, self.actuators[1])[3])
-        joint_T_front_right.append(p.getJointState(self.robot, self.actuators[2])[3])
-        joint_T_front_right.append(p.getJointState(self.robot, self.actuators[3])[3])
-        joint_T_back_left.append(p.getJointState(self.robot, self.actuators[4])[3])
-        joint_T_back_left.append(p.getJointState(self.robot, self.actuators[5])[3])
-        joint_T_back_right.append(p.getJointState(self.robot, self.actuators[6])[3])
-        joint_T_back_right.append(p.getJointState(self.robot, self.actuators[7])[3])
+        leg_positions = env.cpg_position_controller(t)
+        p.setJointMotorControlArray(env.robot, env.upper_joint_indeces, 
+                                    p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
+        p.setJointMotorControlArray(env.robot, env.lower_joint_indeces, 
+                                    p.POSITION_CONTROL, targetPositions=leg_positions)
+        p.stepSimulation()
+        time.sleep(1/240)
+        self.env_step_count += 1
+
+        # Get the observation
+        observation = self.get_observation()
+
+        # Terminating conditions
+        # Reached goal
+        if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+            done = True
+            print("GOALREACHED")
+        # Episode timeout
+        elif self.env_step_count >= self.max_steps:
+            done = True
+            print('EPISODETERM')
+        else:
+            done = False
+    
+
+        return observation, done
+    
+    # def get_end_effector_force(self):
+
+    #     # Append the joint torque forces for each leg
+    #     joint_T_front_left = []
+    #     joint_T_front_right = []
+    #     joint_T_back_left = []
+    #     joint_T_back_right = []
+
+    #     # Robot end-effector position
+    #     robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
+
+    #     # Robot end-effector position
+    #     robot_legs_EE_orn = np.array(self.get_end_effector_pose()[1])
+        
+    #     joint_T_front_left.append(p.getJointState(self.robot, self.actuators[0])[3])
+    #     joint_T_front_left.append(p.getJointState(self.robot, self.actuators[1])[3])
+
+    #     p.calculateJacobian(self.robot, 1, )
+
+    #     joint_T_front_right.append(p.getJointState(self.robot, self.actuators[2])[3])
+    #     joint_T_front_right.append(p.getJointState(self.robot, self.actuators[3])[3])
+
+    #     joint_T_back_left.append(p.getJointState(self.robot, self.actuators[4])[3])
+    #     joint_T_back_left.append(p.getJointState(self.robot, self.actuators[5])[3])
+
+    #     joint_T_back_right.append(p.getJointState(self.robot, self.actuators[6])[3])
+    #     joint_T_back_right.append(p.getJointState(self.robot, self.actuators[7])[3])
+        
 
     def get_end_effector_pose(self):
         
@@ -167,17 +293,17 @@ class LeggedEnv(gym.Env):
                                        for i in range(self.num_of_joints)])
         
         # Linear and Angular velocity of the robot
-        self.linear_vel = np.array(p.getBaseVelocity(self.robot)[0])
-        self.angular_vel = np.array(p.getBaseVelocity(self.robot)[1])
+        self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
+        self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
 
         # Robot Position
-        self.robot_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
+        self.base_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
 
         # Robot Orientation (Quaternion)
-        self.robot_orn = np.array(p.getBasePositionAndOrientation(self.robot)[1])
+        self.base_orn = np.array(p.getBasePositionAndOrientation(self.robot)[1])
 
         # Robot Orientation (Euler Angles)
-        self.robot_rpy = np.array(p.getEulerFromQuaternion(self.robot_orn))
+        self.base_rpy = np.array(p.getEulerFromQuaternion(self.base_orn))
 
         # Robot end-effector position
         self.robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
@@ -185,24 +311,32 @@ class LeggedEnv(gym.Env):
         # Robot end-effector position
         self.robot_legs_EE_orn = np.array(self.get_end_effector_pose()[1])
 
+        # Goal position
+        self.goal_pos = np.array(p.getBasePositionAndOrientation(self.goal_id)[0])
+
+        # Goal orientation
+        self.goal_orn = np.array(p.getBasePositionAndOrientation(self.goal_id)[1])
+
+        observation = np.hstack([
+            *self.base_lin_vel,
+            *self.base_ang_vel,
+            *self.base_pos,
+            *self.base_orn,
+            *self.robot_legs_EE_pos,
+            *self.robot_legs_EE_orn
+        ])
+
+        return observation
+
 
 if __name__ == "__main__":
     env = LeggedEnv()
-    # p.setRealTimeSimulation(1)
+    env.reset()
+    done = False
     t = 0
-    while True:
-        desiredJointVelocities = [1, 1, 1, 1, 1, 1, 1, 1]
-        forces = [50] * len(env.actuators)
-        p.setJointMotorControlArray(env.robot, env.actuators, controlMode=p.POSITION_CONTROL, targetVelocities=env.start_joint_pos, forces=forces)
-        # p.setJointMotorControlArray(env.robot, env.actuators, controlMode=p.VELOCITY_CONTROL, targetVelocities=desiredJointVelocities, forces= forces)
-        # for i in range(env.num_of_joints):
-        #     print(i, p.getJointState(env.robot, env.actuators[i]))
-        env.get_end_effector_positions()
-        leg_positions = env.cpg_position_controller(t)
-        p.setJointMotorControlArray(env.robot, env.upper_joint_indeces, 
-                                    p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
-        p.setJointMotorControlArray(env.robot, env.lower_joint_indeces, 
-                                    p.POSITION_CONTROL, targetPositions=leg_positions)
-        p.stepSimulation()
-        time.sleep(0.01)
-        t += 0.01
+    while not done:
+        obs, done = env.cpg_step(t)
+        t+=(1/240)
+
+
+        
