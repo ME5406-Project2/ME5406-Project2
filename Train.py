@@ -43,12 +43,6 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     :param save_freq: frequency to save model
     """
 
-    ############# Hyper parameters #############
-    # LSTM Params
-    lstm_layers = 1
-    lstm_dropout = 0.0
-    ############################################
-
     # testing code (to be replaced with actual env)
     env = make_env()
 
@@ -188,6 +182,8 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     # Train model
     model.learn(total_timesteps=int(num_timesteps), progress_bar=True, callback=cb_list)
 
+    # save the model policy independently from model
+
 
 def make_env():
     env = gym.make('CartPole-v1')
@@ -195,3 +191,7 @@ def make_env():
     # discretize actions using wrapper
     env = DiscreteActionWrapper(env)
     return env
+
+# testing code
+if __name__ == "__main__":
+    Train("PPO", env=None, num_timesteps=1e5)
