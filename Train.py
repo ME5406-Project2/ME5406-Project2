@@ -29,7 +29,7 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     :param num_features: number of features to be extracted
     :param show_net_arch: display the network architecture
     :param use_LSTM: use LSTM as feature extractor else use FlattenExtractor
-                    Note: TRPO does not support LSTM
+                    NOTE: TRPO does not support LSTM
     :param lstm_layers: number of layers of lstm
     :param lstm_dropout: dropout rate for lstm only applicable if more than 1 lstm layers are used
     :param verbose: 0 for no output, 1 for info messages, 2 for debug messages

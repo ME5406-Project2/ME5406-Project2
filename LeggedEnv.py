@@ -48,6 +48,10 @@ class LeggedEnv(gym.Env):
             7: np.array([-10, -5, 0, 5, 10]),
         }
 
+        # Define action space
+        actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
+        self.action_space = MultiDiscrete(actions)
+
     def spawn_robot(self):
         """
         Instantiates the robot in the simulation.
@@ -284,17 +288,42 @@ class LeggedEnv(gym.Env):
         self.joint_positions = np.array([p.getJointState(self.robot, env.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
         
+        # relative joint angle in radians (useful)
+        # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
+        self.normalized_joint_angles = self.joint_positions / (np.pi / 2)
+
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, env.actuators[i])[1] 
                                        for i in range(self.num_of_joints)])
         
+        # v_max (set in urdf file) = p.getJointInfo()[11] (useful)
+        # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
+        max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
+        self.normalized_joint_velocities = np.divide(self.joint_velocities, max_angular_velocity)
+
         # Reaction forces of all 8 joints
         self.joint_reaction_forces = np.array([p.getJointState(env.robot, env.actuators[i])[2] 
                                        for i in range(self.num_of_joints)])
         
+        # NOTE f_max not defined in URDF (might be useful for slippage stuff?)
+        # f_max = p.getJointInfo()[10]
+        # normalize reaction forces [-f_max, f_max] -> [-1,1]
+        max_reaction_force = np.array([self.actuators_info[i][10] for i in range(self.num_of_joints)])
+        self.normalized_joint_reaction_forces = np.divide(self.joint_reaction_forces, max_reaction_force)
+
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
         self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
+
+        # normalize linear and angular velocities [] -> [-1,1]
+        # limits for linear and angular velocity cannot be set in URDF
+        # need to find other methods to implement / constraint
+        # proposed method to estimate linear velocity:
+        # lin_vel_max = pi*length of leg (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
+        # ang_vel_max = ???
+        base_lin_vel_limit, base_ang_vel_limit = 10 , 10
+        self.normalized_base_lin_vel = self.base_lin_vel / base_lin_vel_limit
+        self.normalized_base_ang_vel = self.base_ang_vel / base_ang_vel_limit
 
         # Robot Position
         self.base_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
