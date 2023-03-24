@@ -96,8 +96,8 @@ class LeggedEnv(gym.Env):
             p.resetJointState(self.robot, self.actuators[i], self.start_joint_pos[i])
         
         # Set all the motors to position or velocity control
-        p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.POSITION_CONTROL)
-        # p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.VELOCITY_CONTROL)
+        # p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.POSITION_CONTROL)
+        p.setJointMotorControlArray(self.robot, self.actuators, controlMode=p.VELOCITY_CONTROL)
 
         # Upper and lower joint indeces
         self.upper_joint_indeces = [0, 2, 4, 6]
