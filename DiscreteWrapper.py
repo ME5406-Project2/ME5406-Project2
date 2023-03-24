@@ -1,28 +1,6 @@
 import gym
-from CustomNetwork import CustomMultiCategoricalLSTMPolicy
 from gym.spaces import Box
 import numpy as np
-
-############# Hyper parameters #############
-# LSTM params
-lstm_features = 64
-lstm_layers = 1
-lstm_dropout = 0.2
-############# ################ #############
-
-# Define and train the LSTM-based PPO policy
-# How to use
-# env = gym.make('YourEnvName')
-# vf = critic, [64] : 1 layer with 64 neurons
-# pi = actor, [64] : 1 layer with 64 neurons
-# For 1D observation space, a 2 layers fully connected net is used with:
-# 64 units (per layer) for PPO/A2C/DQN
-# 256 units for SAC
-# [400, 300] units for TD3/DDPG (values are taken from the original TD3 paper)
-# policy_kwargs = dict(net_arch=dict(vf=[64], pi=[64]))
-# replace PPO with other algorithms
-# model = PPO(CustomMultiCategoricalLSTMPolicy, env, policy_kwargs=policy_kwargs, verbose=1)
-# model.learn(total_timesteps=int(1e5))
 
 class DiscreteActionWrapper(gym.ActionWrapper):
     def __init__(self, env: gym.Env) -> None:
