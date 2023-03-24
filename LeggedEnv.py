@@ -177,7 +177,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [1, 0, 0]
+        box_pos = [2, 1, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
