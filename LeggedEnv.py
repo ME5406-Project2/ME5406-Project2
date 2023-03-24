@@ -32,9 +32,13 @@ class LeggedEnv(gym.Env):
         )
 
         # Termination condition parameter
-        self.termination_pos_dist = 0.2
+        self.termination_pos_dist = 0.4
         self.max_steps = 10000
         self.env_step_count = 0
+        self.prev_dist = 0
+
+        # Initial reward
+        self.reward = 0
 
         # Define joint-to-action mapping
         self.joint_to_action_map = {
@@ -104,6 +108,9 @@ class LeggedEnv(gym.Env):
             p.enableJointForceTorqueSensor(self.robot, joint, 1)
 
     def reset(self):
+        # Reset reward and step count for episode
+        self.reward = 0
+        self.env_step_count = 0
         # Reset simulation
         p.resetSimulation()
         # Load the initial parameters again
@@ -129,6 +136,7 @@ class LeggedEnv(gym.Env):
         return self.get_observation()
     
     def step(self, action):
+
         joint_velocities = []
 
         # Find the actions based on pre-defined mappings
@@ -155,12 +163,16 @@ class LeggedEnv(gym.Env):
         if self.env_step_count >= self.max_steps:
             done = True
 
-        return observation, done
+        self.prev_dist = self.xyz_obj_dist_to_goal()
+
+        reward = self.get_reward()
+    
+        return observation, reward, done
         
     def xyz_obj_dist_to_goal(self):
 
         dist = np.linalg.norm(self.base_pos - self.goal_pos)
-        print(dist)
+        # print(dist)
         return dist
     
     def generate_goal(self):
@@ -216,16 +228,19 @@ class LeggedEnv(gym.Env):
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
-            print("GOALREACHED")
+            print("GOAL REACHED")
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
-            print('EPISODETERM')
+            print('EPISODE LENGTH EXCEEDED')
         else:
             done = False
-    
 
-        return observation, done
+        self.prev_dist = self.xyz_obj_dist_to_goal()
+
+        reward = self.get_reward()
+    
+        return observation, reward, done
     
     # def get_end_effector_force(self):
 
@@ -317,6 +332,9 @@ class LeggedEnv(gym.Env):
         # Goal orientation
         self.goal_orn = np.array(p.getBasePositionAndOrientation(self.goal_id)[1])
 
+        # print(f"Position{self.base_pos}")
+        # print(f"Ornrpy{self.base_rpy}")
+
         observation = np.hstack([
             *self.base_lin_vel,
             *self.base_ang_vel,
@@ -327,7 +345,29 @@ class LeggedEnv(gym.Env):
         ])
 
         return observation
-
+    
+    def get_reward(self):
+        # Goal reached
+        if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+            self.reward += 10
+        # Robot is moving towards goal
+        if self.prev_dist > self.xyz_obj_dist_to_goal():
+            self.reward += 0.02
+        # Time-based penalty
+        if self.env_step_count >= self.max_steps:
+            self.reward -= 0.05
+        # Encourage stability
+        # Value of 1 means perfect stability, 0 means complete instability
+        roll = self.base_rpy[0]
+        pitch = self.base_rpy[1]
+        z_pos = self.base_pos[2]
+        if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
+            self.reward += 0.02
+        # ADDITIONS TO BE MADE
+        # Penalise staying in same place
+        # Penalise sudden joint accelerations
+        # Ensure that joint angles don't deviate too much
+        return self.reward
 
 if __name__ == "__main__":
     env = LeggedEnv()
@@ -335,7 +375,7 @@ if __name__ == "__main__":
     done = False
     t = 0
     while not done:
-        obs, done = env.cpg_step(t)
+        obs, reward, done = env.cpg_step(t)
         t+=(1/240)
 
 
