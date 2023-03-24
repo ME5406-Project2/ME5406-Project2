@@ -333,10 +333,11 @@ class LeggedEnv(gym.Env):
         # normalize linear and angular velocities [] -> [-1,1]
         # limits for linear and angular velocity cannot be set in URDF
         # need to find other methods to implement / constraint
-        # proposed method to estimate linear velocity:
-        # lin_vel_max = pi*length of leg (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
-        # ang_vel_max = ???
-        base_lin_vel_limit, base_ang_vel_limit = 10 , 10
+        # proposed method to estimate linear velocity: model legs as a 2 wheel differential drive (overestimate)
+        # length of leg = 0.575m, dist between legs = 0.565
+        # lin_vel_max = pi*0.575 (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
+        # ang_vel_max = 0.575*2pi / 0.565 ~= 2pi 
+        base_lin_vel_limit, base_ang_vel_limit = 0.575*np.pi , 2*np.pi
         self.normalized_base_lin_vel = self.base_lin_vel / base_lin_vel_limit
         self.normalized_base_ang_vel = self.base_ang_vel / base_ang_vel_limit
 
@@ -346,8 +347,15 @@ class LeggedEnv(gym.Env):
         # Robot Orientation (Quaternion)
         self.base_orn = np.array(p.getBasePositionAndOrientation(self.robot)[1])
 
+        # normalize orientation to [-1,1] by dividing by norm (useful)
+        base_orn_length = np.sqrt(np.dot(self.base_orn, self.base_orn))
+        self.normalized_base_orn = self.base_orn / base_orn_length
+
         # Robot Orientation (Euler Angles)
         self.base_rpy = np.array(p.getEulerFromQuaternion(self.base_orn))
+
+        # normalize orientation (Euler Angles) [-pi, pi] -> [-1,1] (useful)
+        self.normalized_rpy = self.base_rpy / np.pi
 
         # Robot end-effector position
         self.robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
@@ -361,6 +369,22 @@ class LeggedEnv(gym.Env):
         # Goal orientation
         self.goal_orn = np.array(p.getBasePositionAndOrientation(self.goal_id)[1])
 
+        # Convert robot's orientation to rotation matrix
+        rotation_matrix = np.array(p.getMatrixFromQuaternion(self.base_orn))
+        # Create homogeneous rotation matrix
+        T = np.eye(4)
+        # transpose to convert from world frame to robot frame
+        T[:3, :3] = rotation_matrix.T
+        T[:3, :3] = -self.base_pos # Subtract the translation vector
+
+        # Transform goal coordinates from global frame into robot frame
+        relative_goal_pos = np.dot(T, np.append(self.goal_pos, 1))[:3]
+
+        # Relative distance to goal (not normalized)
+        self.relative_goal_dist = np.sqrt(np.dot(relative_goal_pos, relative_goal_pos))
+        # Relative vector to goal (normalized)
+        self.relative_goal_vect = relative_goal_pos / self.relative_goal_vect
+
         # print(f"Position{self.base_pos}")
         # print(f"Ornrpy{self.base_rpy}")
 
@@ -373,9 +397,14 @@ class LeggedEnv(gym.Env):
             *self.robot_legs_EE_orn
         ])
 
+        # Additions to be made
+        # CoG in robot frame
+
         return observation
     
     def get_reward(self):
+        # NOTE Shouldnt reward for each episode start from 0?
+
         # Goal reached
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             self.reward += 10

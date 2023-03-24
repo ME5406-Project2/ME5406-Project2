@@ -1,11 +1,11 @@
 import gym
 import numpy as np
 from stable_baselines3 import PPO, SAC, DDPG, TD3
-#from sb3_contrib import TRPO
+from sb3_contrib import TRPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from gym.spaces import MultiDiscrete
-from CustomNetwork import CustomMultiCategoricalLSTMPolicy, LSTMPolicy
+from CustomNetwork import Custom_TD3_Policy
 from DiscreteWrapper import DiscreteActionWrapper
 # Define the Gym environment
 env = gym.make('CartPole-v1')
@@ -16,7 +16,7 @@ env.action_space = MultiDiscrete([2])
 env = DiscreteActionWrapper(env)
 policy_kwargs = dict(net_arch=dict(qf=[128], pi=[64]))
 # Define the PPO model
-model = TD3('MlpPolicy', env, verbose=1, policy_kwargs=policy_kwargs)
+model = DDPG('MlpPolicy', env, verbose=1, policy_kwargs=policy_kwargs)
 print(model.policy)
 
 # Train the model and log the progress to TensorBoard
