@@ -13,7 +13,7 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     :param save_path: path to pretrained model e.g. leggedPPO.zip
     :param eval_eps: number of episodes to evaluate agent
     """
-    # create actual environment
+    # create environment
     if use_dummy:
         env = make_dummy_env()
     else:
