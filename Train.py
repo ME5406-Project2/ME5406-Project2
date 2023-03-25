@@ -1,3 +1,4 @@
+import shutil
 import string
 import gym
 from DiscreteWrapper import DiscreteActionWrapper
@@ -10,9 +11,14 @@ from gym.spaces import MultiDiscrete
 from stable_baselines3.common.callbacks import CallbackList, EvalCallback, CheckpointCallback, StopTrainingOnNoModelImprovement
 from stable_baselines3.common.monitor import Monitor
 import os
+from LeggedEnv import LeggedEnv
+
+# to use dummy env or actual env
+use_dummy = True
 
 # Trains the agent and logs the training process onto tensorboard
-def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
+def Train(algorithm: string, num_vectorized_env: int = 1,
+          load_path: string = None,
           num_timesteps: int=1e6, num_features: int = 64,
           show_net_arch: bool = False,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
@@ -22,8 +28,8 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     """
     Trains the agent and logs the training process onto tensorboard
     :param algorithm: algorithm name
-    :param env: gym environment to be used
     :param num_vectorized_env: number of vectorized environment to be used
+    :param load_path: path to model to continue training (Default is None)
     
     :param num_timesteps: number of timesteps to train
     :param num_features: number of features to be extracted
@@ -43,14 +49,15 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     :param save_freq: frequency to save model
     """
 
-    # testing code (to be replaced with actual env)
-    env = make_env()
+    # to use dummy env or actual env
+    if use_dummy:
+        env = make_dummy_env()
+    # create legged environment
+    else:
+        env = make_env()
 
     # to add in vectorized environment (not implemented yet)
     
-    # discretize actions using wrapper
-    # env = DiscreteActionWrapper(env)
-
     # path to save model
     save_path = "./trained_models/"+training_name+"/"
     best_model_path = save_path+"best_model"
@@ -80,9 +87,17 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor)
         # Defining the DDPG model
-        model = DDPG(policy=policy, env=env, verbose=verbose,
-                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = DDPG.load(path=load_path, policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = DDPG(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     elif (algorithm=="PPO"):
         # Defining policy to be used
@@ -97,9 +112,17 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor)
         # Defining the PPO model
-        model = PPO(policy=policy, env=env, verbose=verbose,
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = PPO.load(path=load_path, policy=policy, env=env, verbose=verbose,
                      learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
                      policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = PPO(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     elif (algorithm=="SAC"):
         # Defining policy to be used
@@ -115,9 +138,17 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                              share_features_extractor=share_features_extractor,
                              learning_rate=learning_rate)
         # Defining the SAC model
-        model = SAC(policy=policy, env=env, verbose=verbose,
-                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = SAC.load(path=load_path, policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = SAC(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     elif (algorithm=="TRPO"):
         policy = "MlpPolicy"
@@ -128,9 +159,17 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                              share_features_extractor=share_features_extractor,
                              learning_rate=learning_rate)
         # Defining the TRPO model
-        model = TRPO(policy=policy, env=env, verbose=verbose,
-                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = TRPO.load(path=load_path, policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = TRPO(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     elif (algorithm=="TD3"):
         # Defining policy to be used
@@ -146,9 +185,17 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                              share_features_extractor=share_features_extractor,
                              learning_rate=learning_rate)
         # Defining the TD3 model
-        model = TD3(policy=policy, env=env, verbose=verbose,
-                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = TD3.load(path=load_path, policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = TD3(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     else:
         raise ValueError("Invalid algorithm name: {}".format(algorithm))
@@ -163,11 +210,14 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
                                        name_prefix=training_name)
     
     # callback to terminate training on no model imporovement
-    stop_train_cb = StopTrainingOnNoModelImprovement(max_no_improvement_evals=3,
-                                                     min_evals=10)
+    stop_train_cb = StopTrainingOnNoModelImprovement(max_no_improvement_evals=10,
+                                                     min_evals=100)
     
     # create seperate evaluation environment for evaluation
-    eval_env = make_env()
+    if use_dummy:
+        eval_env = make_dummy_env()
+    else:
+        eval_env = make_env()
     eval_env = Monitor(eval_env)
 
     # callback for regular evaluation and save best model
@@ -179,19 +229,54 @@ def Train(algorithm: string, env:gym.Env, num_vectorized_env: int = 1,
     # callback list
     cb_list = CallbackList([checkpoint_cb, eval_cb])
 
+    # Continue logging to the original graph if is not training from scratch
+    if load_path is not None:
+        reset_num_timestep = False
+        copy_log_file(load_path=load_path, dst=tensorboard_path, algorithm=algorithm)
+    else:
+        reset_num_timestep = True
+    
     # Train model
-    model.learn(total_timesteps=int(num_timesteps), progress_bar=True, callback=cb_list)
+    model.learn(total_timesteps=int(num_timesteps), progress_bar=True, callback=cb_list, reset_num_timesteps=reset_num_timestep)
 
-    # save the model policy independently from model
-
-
-def make_env():
+def make_dummy_env():
     env = gym.make('CartPole-v1')
     env.action_space = MultiDiscrete([2])
     # discretize actions using wrapper
     env = DiscreteActionWrapper(env)
     return env
 
+def make_env():
+    env = LeggedEnv()
+    # discretize actions using wrapper
+    env = DiscreteActionWrapper(env)
+    return env
+
+def copy_log_file(load_path, dst, algorithm):
+    """
+    Copys the log file in dst folder and copy to src folder
+    :param load_path: path where pretrained model is located
+    :param dst: destination folder (tensorboard log folder for new model)
+    :param algorithm: name of algorithm
+    """
+    # set the src to the tensorboard_log folder of pretrained model
+    if load_path[:2] != "./":
+        load_path = "./"+load_path
+    prefix = "./trained_models/"
+    src = load_path[:load_path.find('/', load_path.find('/', len(prefix))) + 1] + "tensorboard_log" 
+    # get the path of the latest updated file assumed to be tensorboard log in src folder
+    file_path = max([os.path.join(src, f) for f in os.listdir(src)], key=os.path.getmtime).replace("\\", "/")
+    # create a folder in dest dir
+    dst += "/"+algorithm+"_0"
+    # remove folder if exists
+    if os.path.exists(dst):
+        shutil.rmtree(dst, ignore_errors=True)
+    os.makedirs(dst, exist_ok=True)
+    # copy the file to dst folder
+    # to plot a continuous graph
+    shutil.copytree(src=file_path, dst=dst, dirs_exist_ok=True)    
+
 # testing code
 if __name__ == "__main__":
-    Train("PPO", env=None, num_timesteps=1e5)
+    Train("PPO", num_timesteps=5e4)
+    #Train("PPO", num_timesteps=2e4, training_name="test2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")

@@ -1,17 +1,10 @@
 from stable_baselines3.common.evaluation import evaluate_policy
 import string
-import gym
-from DiscreteWrapper import DiscreteActionWrapper
 from stable_baselines3 import PPO, SAC, DDPG, TD3
 from sb3_contrib import TRPO
-from CustomNetwork import (Custom_DDPG_Policy, Custom_PPO_Policy, 
-                           Custom_SAC_Policy, Custom_TD3_Policy, 
-                           Custom_TRPO_Policy)
-from gym.spaces import MultiDiscrete
-from stable_baselines3.common.callbacks import CallbackList, EvalCallback, CheckpointCallback, StopTrainingOnNoModelImprovement
-from stable_baselines3.common.monitor import Monitor
-import os
-from Train import make_env
+from Train import make_dummy_env, make_env
+
+use_dummy = True
 
 def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     """
@@ -20,7 +13,11 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     :param save_path: path to pretrained model e.g. leggedPPO.zip
     :param eval_eps: number of episodes to evaluate agent
     """
-    env = make_env()
+    # create actual environment
+    if use_dummy:
+        env = make_dummy_env()
+    else:
+        env = make_env()
 
     if (algorithm=="DDPG"):
         # Defining the DDPG model
@@ -47,19 +44,19 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
         raise ValueError("Invalid algorithm name: {}".format(algorithm))
     
     # Evaluate policy
-    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
+    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=eval_eps)
     print("Mean rewards =", mean_reward)
     print("Std rewards =", std_reward)
 
     # render the environment forever until ctrl-c is pressed
     obs = env.reset()
     while True:
-        action, states = model.predict(obs, deterministic=True)
-        obs, rewards, done, _ = env.step(action=action)
+        action, _states = model.predict(obs, deterministic=True)
+        obs, _rewards, done, _ = env.step(action=action)
         env.render()
         if done:
             obs = env.reset()
 
 # testing code
 if __name__ == "__main__":
-    Validation("PPO", "./trained_models/unnamed_training/unnamed_training_70000_steps.zip")
+    Validation("PPO", "./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
