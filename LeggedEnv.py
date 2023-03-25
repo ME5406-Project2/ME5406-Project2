@@ -24,13 +24,6 @@ class LeggedEnv(gym.Env):
         # Store observations in dict
         self.obs = {}
 
-        # Define action and observation spaces
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(44,), dtype=np.float32)
-        self.action_space = gym.spaces.Box(
-            low=-1, high=1, shape=(8,5), dtype=np.float32
-        )
-
         # Termination condition parameter
         self.termination_pos_dist = 0.4
         self.max_steps = 10000
@@ -51,10 +44,31 @@ class LeggedEnv(gym.Env):
             6: np.array([-10, -5, 0, 5, 10]),
             7: np.array([-10, -5, 0, 5, 10]),
         }
+        
+        # Load the initial parameters again
+        p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
+        planeId = p.loadURDF("plane.urdf")
+        p.setGravity(0, 0, -9.81)
+
+        # Load surface that the robot will walk on
+        self.surface = Surface(
+            texture_path="wood.png",
+            lateral_friction=1.0,
+            spinning_friction=1.0,
+            rolling_friction=0.0)
+        
+        # Spawn the robot and goal box in simulation
+        self.spawn_robot()
+        self.generate_goal()
 
         # Define action space
         actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
         self.action_space = MultiDiscrete(actions)
+
+        # Define observation spaces
+        obs_shape = self.get_observation().shape()
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(obs_shape), dtype=np.float32)
 
     def spawn_robot(self):
         """
@@ -323,8 +337,8 @@ class LeggedEnv(gym.Env):
         # NOTE f_max not defined in URDF (might be useful for slippage stuff?)
         # f_max = p.getJointInfo()[10]
         # normalize reaction forces [-f_max, f_max] -> [-1,1]
-        max_reaction_force = np.array([self.actuators_info[i][10] for i in range(self.num_of_joints)])
-        self.normalized_joint_reaction_forces = np.divide(self.joint_reaction_forces, max_reaction_force)
+        # max_reaction_force = np.array([self.actuators_info[i][10] for i in range(self.num_of_joints)])
+        # self.normalized_joint_reaction_forces = np.divide(self.joint_reaction_forces, max_reaction_force)
 
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
@@ -375,7 +389,7 @@ class LeggedEnv(gym.Env):
         T = np.eye(4)
         # transpose to convert from world frame to robot frame
         T[:3, :3] = rotation_matrix.T
-        T[:3, :3] = -self.base_pos # Subtract the translation vector
+        T[:3, 3] = -self.base_pos # Subtract the translation vector
 
         # Transform goal coordinates from global frame into robot frame
         relative_goal_pos = np.dot(T, np.append(self.goal_pos, 1))[:3]
@@ -389,12 +403,14 @@ class LeggedEnv(gym.Env):
         # print(f"Ornrpy{self.base_rpy}")
 
         observation = np.hstack([
-            *self.base_lin_vel,
-            *self.base_ang_vel,
-            *self.base_pos,
-            *self.base_orn,
-            *self.robot_legs_EE_pos,
-            *self.robot_legs_EE_orn
+            *self.normalized_joint_angles,
+            *self.normalized_joint_velocities,
+            *self.normalized_base_lin_vel,
+            *self.normalized_base_ang_vel,
+            *self.normalized_base_orn,
+            *self.normalized_rpy,
+            *self.relative_goal_dist,
+            *self.relative_goal_vect
         ])
 
         # Additions to be made
@@ -403,8 +419,6 @@ class LeggedEnv(gym.Env):
         return observation
     
     def get_reward(self):
-        # NOTE Shouldnt reward for each episode start from 0?
-
         # Goal reached
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             self.reward += 10
