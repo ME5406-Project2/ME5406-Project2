@@ -3,21 +3,21 @@
      Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot
-  name="Assem1.SLDASM">
+  name="Assem1_v3.SLDASM">
   <link
     name="base_link">
     <inertial>
       <origin
-        xyz="0.504545318881019 0.0482876332833944 -0.2"
+        xyz="0.00454531888101939 -0.0617123667166056 -2.77555756156289E-17"
         rpy="0 0 0" />
       <mass
         value="38.4857486524171" />
       <inertia
         ixx="0.485830705764068"
-        ixy="0.00363638069026405"
-        ixz="1.54067646125319E-16"
+        ixy="0.00363638069026404"
+        ixz="1.66245679239784E-16"
         iyy="3.89642509357713"
-        iyz="1.3597663980327E-17"
+        iyz="1.06299583251663E-17"
         izz="3.51367848534271" />
     </inertial>
     <visual>
@@ -26,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/base_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -40,7 +40,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/base_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -57,7 +57,7 @@
         ixy="3.23758606924664E-09"
         ixz="0.00104219417291525"
         iyy="0.026234794652848"
-        iyz="-1.06222201157039E-08"
+        iyz="-1.06222201156497E-08"
         izz="0.0261860648976372" />
     </inertial>
     <visual>
@@ -66,7 +66,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/flu_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/flu_link.STL" />
       </geometry>
       <material
         name="">
@@ -80,7 +80,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/flu_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/flu_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -88,8 +88,8 @@
     name="flu"
     type="revolute">
     <origin
-      xyz="0.21 -0.0225 0.055"
-      rpy="1.5708 1.1212 0" />
+      xyz="-0.29 -0.0550000000000003 0.2225"
+      rpy="0 0 -1.12122873429267" />
     <parent
       link="base_link" />
     <child
@@ -99,7 +99,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
@@ -111,11 +111,11 @@
       <mass
         value="3.19560260529421" />
       <inertia
-        ixx="0.00497469754329269"
-        ixy="4.81122477131047E-06"
-        ixz="-3.85736306831481E-06"
+        ixx="0.00497469754329268"
+        ixy="4.81122477130808E-06"
+        ixz="-3.85736306831486E-06"
         iyy="0.0406802699593358"
-        iyz="1.30236499604519E-06"
+        iyz="1.30236499604513E-06"
         izz="0.039923443033037" />
     </inertial>
     <visual>
@@ -124,7 +124,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/fll_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/fll_link.STL" />
       </geometry>
       <material
         name="">
@@ -138,7 +138,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/fll_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/fll_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -147,7 +147,7 @@
     type="revolute">
     <origin
       xyz="0.25 0 0"
-      rpy="0 0 -1.1385" />
+      rpy="0 0 -1.13851717439948" />
     <parent
       link="flu_link" />
     <child
@@ -157,7 +157,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
@@ -170,7 +170,7 @@
         value="3.08030206641427" />
       <inertia
         ixx="0.00640522970601072"
-        ixy="5.18665106393271E-09"
+        ixy="5.18665106241482E-09"
         ixz="0.00104219303257973"
         iyy="0.0262347879832158"
         iyz="-1.30138679828133E-08"
@@ -182,7 +182,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/fru_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/fru_link.STL" />
       </geometry>
       <material
         name="">
@@ -196,7 +196,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/fru_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/fru_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -204,8 +204,8 @@
     name="fru"
     type="revolute">
     <origin
-      xyz="0.21 0.4225 0.055"
-      rpy="-1.5708 1.0032 0" />
+      xyz="-0.289999999999999 -0.0550000000000002 -0.2225"
+      rpy="3.14159265358979 0 -1.00317652384274" />
     <parent
       link="base_link" />
     <child
@@ -215,7 +215,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
@@ -228,10 +228,10 @@
         value="3.19560260133236" />
       <inertia
         ixx="0.00497469753825961"
-        ixy="4.81124714543917E-06"
-        ixz="-3.85738975864839E-06"
+        ixy="4.8112471454408E-06"
+        ixz="-3.85738975864844E-06"
         iyy="0.0406802699104282"
-        iyz="1.30235932492411E-06"
+        iyz="1.30235932492415E-06"
         izz="0.0399234429887749" />
     </inertial>
     <visual>
@@ -240,7 +240,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/frl_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/frl_link.STL" />
       </geometry>
       <material
         name="">
@@ -254,7 +254,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/frl_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/frl_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -263,7 +263,7 @@
     type="revolute">
     <origin
       xyz="0.25 0 0"
-      rpy="0 0 0.92792" />
+      rpy="0 0 0.927916437805553" />
     <parent
       link="fru_link" />
     <child
@@ -273,14 +273,14 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
     name="blu_link">
     <inertial>
       <origin
-        xyz="0.0900093181651295 3.89552863300224E-08 0.0538957669205462"
+        xyz="0.0900093181651296 3.89552862190001E-08 0.0538957669205462"
         rpy="0 0 0" />
       <mass
         value="3.08030178447125" />
@@ -289,7 +289,7 @@
         ixy="6.27291777267718E-09"
         ixz="0.00104219187862973"
         iyy="0.0262347837614182"
-        iyz="-1.48479982784258E-08"
+        iyz="-1.48479982783173E-08"
         izz="0.0261860596399259" />
     </inertial>
     <visual>
@@ -298,7 +298,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/blu_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/blu_link.STL" />
       </geometry>
       <material
         name="">
@@ -312,7 +312,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/blu_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/blu_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -320,8 +320,8 @@
     name="blu"
     type="revolute">
     <origin
-      xyz="0.79 -0.0225 0.055"
-      rpy="-1.5708 1.3087 -3.1416" />
+      xyz="0.29 -0.055 0.2225"
+      rpy="0 0 -1.83292456259005" />
     <parent
       link="base_link" />
     <child
@@ -331,7 +331,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
@@ -344,10 +344,10 @@
         value="3.19560260515606" />
       <inertia
         ixx="0.00497469754311635"
-        ixy="4.81122601893465E-06"
-        ixz="-3.85736427111842E-06"
+        ixy="4.81122601893574E-06"
+        ixz="-3.85736427111837E-06"
         iyy="0.0406802699571201"
-        iyz="1.30236463090308E-06"
+        iyz="1.30236463090303E-06"
         izz="0.0399234430312326" />
     </inertial>
     <visual>
@@ -356,7 +356,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/bll_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/bll_link.STL" />
       </geometry>
       <material
         name="">
@@ -370,7 +370,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/bll_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/bll_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -379,7 +379,7 @@
     type="revolute">
     <origin
       xyz="0.25 0 0"
-      rpy="0 0 1.1163" />
+      rpy="0 0 1.11630563742211" />
     <parent
       link="blu_link" />
     <child
@@ -389,23 +389,23 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
     name="bru_link">
     <inertial>
       <origin
-        xyz="0.0900093102637642 3.61301034645933E-08 0.0538957762043126"
+        xyz="0.0900093102637642 3.6130103353571E-08 0.0538957762043125"
         rpy="0 0 0" />
       <mass
         value="3.080301966493" />
       <inertia
         ixx="0.00640522884709718"
-        ixy="5.42961278054196E-09"
+        ixy="5.42961277986433E-09"
         ixz="0.00104219297419877"
         iyy="0.0262347870692762"
-        iyz="-1.35118704660858E-08"
+        iyz="-1.35118704661807E-08"
         izz="0.0261860609591814" />
     </inertial>
     <visual>
@@ -414,7 +414,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/bru_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/bru_link.STL" />
       </geometry>
       <material
         name="">
@@ -428,7 +428,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/bru_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/bru_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -436,8 +436,8 @@
     name="bru"
     type="revolute">
     <origin
-      xyz="0.79 0.4225 0.055"
-      rpy="-1.5708 1.5014 0" />
+      xyz="0.29 -0.055 -0.2225"
+      rpy="3.14159265358979 0 -1.50135697543811" />
     <parent
       link="base_link" />
     <child
@@ -447,7 +447,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
   <link
@@ -460,10 +460,10 @@
         value="3.19560260548347" />
       <inertia
         ixx="0.00497469754418578"
-        ixy="4.81123079090436E-06"
-        ixz="-3.85737699128566E-06"
+        ixy="4.81123079090371E-06"
+        ixz="-3.85737699128557E-06"
         iyy="0.0406802699619135"
-        iyz="1.30236197676355E-06"
+        iyz="1.3023619767635E-06"
         izz="0.0399234430345866" />
     </inertial>
     <visual>
@@ -472,7 +472,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/brl_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/brl_link.STL" />
       </geometry>
       <material
         name="">
@@ -486,7 +486,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://Assem1.SLDASM/meshes/brl_link.STL" />
+          filename="package://Assem1_v3.SLDASM/meshes/brl_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -495,7 +495,7 @@
     type="revolute">
     <origin
       xyz="0.25 0 0"
-      rpy="0 0 -0.7862" />
+      rpy="0 0 -0.786196210632788" />
     <parent
       link="bru_link" />
     <child
@@ -505,7 +505,7 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="500"
+      effort="100"
       velocity="10" />
   </joint>
 </robot>

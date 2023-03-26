@@ -3,7 +3,7 @@
     name="model" />
   <param
     name="robot_description"
-    textfile="$(find Assem1.SLDASM)/urdf/Assem1.SLDASM.urdf" />
+    textfile="$(find Assem1_v3.SLDASM)/urdf/Assem1_v3.SLDASM.urdf" />
   <node
     name="joint_state_publisher_gui"
     pkg="joint_state_publisher_gui"
@@ -16,5 +16,5 @@
     name="rviz"
     pkg="rviz"
     type="rviz"
-    args="-d $(find Assem1.SLDASM)/urdf.rviz" />
+    args="-d $(find Assem1_v3.SLDASM)/urdf.rviz" />
 </launch>

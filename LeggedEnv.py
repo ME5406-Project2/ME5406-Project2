@@ -25,13 +25,16 @@ class LeggedEnv(gym.Env):
         self.obs = {}
 
         # Termination condition parameter
-        self.termination_pos_dist = 0.4
+        self.termination_pos_dist = 0.5
         self.max_steps = 10000
         self.env_step_count = 0
         self.prev_dist = 0
 
-        # Initial reward
-        self.reward = 0
+        # Initialise rewards
+        self.goal_reward = 0
+        self.position_reward = 0
+        self.time_reward = 0
+        self.stability_reward = 0
 
         # Define joint-to-action mapping
         self.joint_to_action_map = {
@@ -66,7 +69,7 @@ class LeggedEnv(gym.Env):
         self.action_space = MultiDiscrete(actions)
 
         # Define observation spaces
-        obs_shape = self.get_observation().shape()
+        obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(44,), dtype=np.float64)
 
@@ -75,13 +78,13 @@ class LeggedEnv(gym.Env):
         Instantiates the robot in the simulation.
         """
         # Set the start pose of the robot
-        self.robot_start_pos = [0, 0, 0]
+        self.robot_start_pos = [0, 0, 0.5]
         self.robot_start_rpy = [90, 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
         # Load the robot URDF into PyBullet
         self.robot = p.loadURDF(
-            "assembly/Assem1.SLDASM/urdf/Assem1.SLDASM.urdf", 
+            "assembly/Assem1_v3.SLDASM/urdf/Assem1_v3.SLDASM.urdf", 
             self.robot_start_pos, 
             self.robot_start_orn)
 
@@ -163,11 +166,12 @@ class LeggedEnv(gym.Env):
             joint_velocities.append(joint_velocity)
 
         # Send action velocities to robot joints
-        p.setJointMotorControlArray(env.robot, self.actuators, 
+        p.setJointMotorControlArray(self.robot, self.actuators, 
                                     p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
         
         # Step the simulation
         p.stepSimulation()
+        time.sleep(1/240)
         self.env_step_count += 1
         
         # Get the observation
@@ -195,7 +199,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [2, 1, 0]
+        box_pos = [2, 0, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -259,36 +263,7 @@ class LeggedEnv(gym.Env):
         reward = self.get_reward()
     
         return observation, reward, done
-    
-    # def get_end_effector_force(self):
-
-    #     # Append the joint torque forces for each leg
-    #     joint_T_front_left = []
-    #     joint_T_front_right = []
-    #     joint_T_back_left = []
-    #     joint_T_back_right = []
-
-    #     # Robot end-effector position
-    #     robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
-
-    #     # Robot end-effector position
-    #     robot_legs_EE_orn = np.array(self.get_end_effector_pose()[1])
         
-    #     joint_T_front_left.append(p.getJointState(self.robot, self.actuators[0])[3])
-    #     joint_T_front_left.append(p.getJointState(self.robot, self.actuators[1])[3])
-
-    #     p.calculateJacobian(self.robot, 1, )
-
-    #     joint_T_front_right.append(p.getJointState(self.robot, self.actuators[2])[3])
-    #     joint_T_front_right.append(p.getJointState(self.robot, self.actuators[3])[3])
-
-    #     joint_T_back_left.append(p.getJointState(self.robot, self.actuators[4])[3])
-    #     joint_T_back_left.append(p.getJointState(self.robot, self.actuators[5])[3])
-
-    #     joint_T_back_right.append(p.getJointState(self.robot, self.actuators[6])[3])
-    #     joint_T_back_right.append(p.getJointState(self.robot, self.actuators[7])[3])
-        
-
     def get_end_effector_pose(self):
         
         front_left_EE_pos = p.getLinkState(self.robot, 1)[0]
@@ -314,7 +289,7 @@ class LeggedEnv(gym.Env):
     def get_observation(self):
         
         # Positions of all 8 joints
-        self.joint_positions = np.array([p.getJointState(self.robot, env.actuators[i])[0] 
+        self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
         
         # relative joint angle in radians
@@ -322,7 +297,7 @@ class LeggedEnv(gym.Env):
         self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
 
         # Velocities of all 8 joints
-        self.joint_velocities = np.array([p.getJointState(self.robot, env.actuators[i])[1] 
+        self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
                                        for i in range(self.num_of_joints)])
         
         # v_max (set in urdf file) = p.getJointInfo()[11]
@@ -331,7 +306,7 @@ class LeggedEnv(gym.Env):
         self.normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float64)
 
         # Reaction forces of all 8 joints
-        self.joint_reaction_forces = np.array([p.getJointState(env.robot, env.actuators[i])[2] 
+        self.joint_reaction_forces = np.array([p.getJointState(self.robot, self.actuators[i])[2] 
                                        for i in range(self.num_of_joints)])
         
         # NOTE f_max not defined in URDF (might be useful for slippage stuff?)
@@ -423,25 +398,34 @@ class LeggedEnv(gym.Env):
     def get_reward(self):
         # Goal reached
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            self.reward += 10
-        # Robot is moving towards goal
+            self.goal_reward = 10
+
+        # Robot is moving towards goal - Position
         if self.prev_dist > self.xyz_obj_dist_to_goal():
-            self.reward += 0.02
+            self.position_reward = 0.1 * self.xyz_obj_dist_to_goal()
+            
         # Time-based penalty
         if self.env_step_count >= self.max_steps:
-            self.reward -= 0.05
+            self.time_reward = -0.05
+
         # Encourage stability
         # Value of 1 means perfect stability, 0 means complete instability
         roll = self.base_rpy[0]
         pitch = self.base_rpy[1]
         z_pos = self.base_pos[2]
         if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-            self.reward += 0.02
+            self.stability_reward = 0.02
+
         # ADDITIONS TO BE MADE
         # Penalise staying in same place
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
-        return self.reward
+
+        # Sum of all rewards
+        reward = (self.goal_reward + self.position_reward + 
+                  self.time_reward + self.stability_reward)
+        
+        return reward
 
 if __name__ == "__main__":
     env = LeggedEnv()
