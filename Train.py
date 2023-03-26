@@ -14,7 +14,7 @@ import os
 from LeggedEnv import LeggedEnv
 
 # to use dummy env or actual env
-use_dummy = True
+use_dummy = False
 
 # Trains the agent and logs the training process onto tensorboard
 def Train(algorithm: string, num_vectorized_env: int = 1,
@@ -24,7 +24,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training", save_freq: int = 10000, eval_freq:int = 5000):
+          training_name: string = "unnamed_training2", save_freq: int = 10000, eval_freq:int = 5000):
     """
     Trains the agent and logs the training process onto tensorboard
     :param algorithm: algorithm name
@@ -247,7 +247,7 @@ def make_dummy_env():
     return env
 
 def make_env():
-    env = LeggedEnv()
+    env = LeggedEnv(use_gui=False)
     # discretize actions using wrapper
     env = DiscreteActionWrapper(env)
     return env
@@ -278,5 +278,5 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    Train("PPO", num_timesteps=5e4)
-    #Train("PPO", num_timesteps=2e4, training_name="test2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
+    # Train("PPO", num_timesteps=5e4)
+    Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")

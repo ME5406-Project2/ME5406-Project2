@@ -13,9 +13,13 @@ class LeggedEnv(gym.Env):
     rectangular goal-space in the workspace.
     
     """
-    def __init__(self):
+    def __init__(self, use_gui):
+
         # Connect to PyBullet client
-        self.physics_client = p.connect(p.GUI)
+        if use_gui:
+            self.physics_client = p.connect(p.GUI)
+        else:
+            self.client = p.connect(p.DIRECT)
 
         # Set visualisation
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
@@ -26,7 +30,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 10000
+        self.max_steps = 1000
         self.env_step_count = 0
         self.prev_dist = 0
 
@@ -71,7 +75,7 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(44,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=(33,), dtype=np.float64)
 
     def spawn_robot(self):
         """
@@ -184,12 +188,14 @@ class LeggedEnv(gym.Env):
         # Episode timeout
         if self.env_step_count >= self.max_steps:
             done = True
+        else:
+            done = False
 
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
         reward = self.get_reward()
     
-        return observation, reward, done
+        return observation, reward, done, {}
         
     def xyz_obj_dist_to_goal(self):
 
@@ -428,7 +434,7 @@ class LeggedEnv(gym.Env):
         return reward
 
 if __name__ == "__main__":
-    env = LeggedEnv()
+    env = LeggedEnv(use_gui=True)
     env.reset()
     done = False
     t = 0
