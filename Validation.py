@@ -4,7 +4,7 @@ from stable_baselines3 import PPO, SAC, DDPG, TD3
 from sb3_contrib import TRPO
 from Train import make_dummy_env, make_env
 
-use_dummy = True
+use_dummy = False
 
 def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     """
@@ -59,4 +59,4 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
 
 # testing code
 if __name__ == "__main__":
-    Validation("PPO", "./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
+    Validation("SAC", "./trained_models/SAC_test/unnamed_training_50000_steps.zip")

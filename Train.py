@@ -81,7 +81,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
@@ -106,7 +106,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
@@ -131,12 +131,12 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[256], pi=[256]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the SAC model
         if load_path is not None:
             # load a pre trained model
@@ -152,12 +152,12 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
 
     elif (algorithm=="TRPO"):
         policy = "MlpPolicy"
-        features_extractor_kwargs = dict(features_dim=num_features)
+        features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the TRPO model
         if load_path is not None:
             # load a pre trained model
@@ -178,12 +178,12 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the TD3 model
         if load_path is not None:
             # load a pre trained model
@@ -278,5 +278,5 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    # Train("PPO", num_timesteps=5e4)
-    Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
+    Train("SAC", num_timesteps=1e6, training_name="SAC_test")
+    #Train("SAC", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")

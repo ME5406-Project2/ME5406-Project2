@@ -75,7 +75,7 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(33,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=obs_shape, dtype=np.float64)
 
     def spawn_robot(self):
         """
