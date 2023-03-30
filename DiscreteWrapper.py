@@ -8,11 +8,11 @@ class DiscreteActionWrapper(gym.ActionWrapper):
         
         # Get the original action space of environment
         original_action_space = env.action_space
-        print(original_action_space)
+        # print(original_action_space)
         # Save the original action space of environment
         self.original_action_space = [original_action_space.nvec[i] for 
                                       i in range(len(original_action_space.nvec))]
-        print("original action space: ",self.original_action_space)
+        # print("original action space: ",self.original_action_space)
         # Define the new action space
         self.action_space = Box(low=-1, high=1, shape=(len(self.original_action_space),),
                                  dtype=np.float32)

@@ -143,7 +143,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             # model at specified path will be overwritten if save path is the same as load path
             model = SAC.load(path=load_path, policy=policy, env=env, verbose=verbose,
                         learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+                        tensorboard_log=tensorboard_path)
             print("Model loaded from {}".format(load_path))
         else:
             model = SAC(policy=policy, env=env, verbose=verbose,
@@ -224,7 +224,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
     eval_cb = EvalCallback(eval_env=eval_env, 
                            best_model_save_path=best_model_path,
                            log_path=results_path, eval_freq=eval_freq,
-                           n_eval_episodes=10, callback_after_eval=stop_train_cb)
+                           n_eval_episodes=3, callback_after_eval=stop_train_cb)
     
     # callback list
     cb_list = CallbackList([checkpoint_cb, eval_cb])
@@ -246,8 +246,8 @@ def make_dummy_env():
     env = DiscreteActionWrapper(env)
     return env
 
-def make_env():
-    env = LeggedEnv(use_gui=False)
+def make_env(use_gui=False):
+    env = LeggedEnv(use_gui=use_gui)
     # discretize actions using wrapper
     env = DiscreteActionWrapper(env)
     return env
@@ -278,5 +278,5 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    Train("SAC", num_timesteps=1e6, training_name="SAC_test")
-    #Train("SAC", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
+    #Train("SAC", num_timesteps=1e6, training_name="SAC_test")
+    Train("SAC", num_timesteps=9.5e5, training_name="SAC_test", load_path="./trained_models/SAC_test/SAC_test_70000_steps.zip")

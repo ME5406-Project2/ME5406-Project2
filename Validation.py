@@ -17,7 +17,7 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     if use_dummy:
         env = make_dummy_env()
     else:
-        env = make_env()
+        env = make_env(use_gui=True)
 
     if (algorithm=="DDPG"):
         # Defining the DDPG model
@@ -53,10 +53,12 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     while True:
         action, _states = model.predict(obs, deterministic=True)
         obs, _rewards, done, _ = env.step(action=action)
-        env.render()
+        if use_dummy:
+            env.render()
         if done:
             obs = env.reset()
 
 # testing code
 if __name__ == "__main__":
-    Validation("SAC", "./trained_models/SAC_test/unnamed_training_50000_steps.zip")
+    #Validation("SAC", "./trained_models/SAC_test/best_model/best_model.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/SAC_test/SAC_test_260000_steps.zip", eval_eps=1)
