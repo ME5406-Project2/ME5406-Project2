@@ -30,7 +30,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 1500
+        self.max_steps = 1000
         self.env_step_count = 0
         self.prev_dist = 0
 
@@ -257,10 +257,10 @@ class LeggedEnv(gym.Env):
     
     def cpg_step(self, t):
         
-        leg_positions = env.cpg_position_controller(t)
-        p.setJointMotorControlArray(env.robot, env.upper_joint_indeces, 
+        leg_positions = self.cpg_position_controller(t)
+        p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
-        p.setJointMotorControlArray(env.robot, env.lower_joint_indeces, 
+        p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=leg_positions)
         p.stepSimulation()
         # time.sleep(1/240)
@@ -308,6 +308,24 @@ class LeggedEnv(gym.Env):
                              back_left_EE_orn, back_right_EE_orn])
 
         return legs_pos, legs_orn
+    
+    def check_no_feet_on_ground(self):
+
+        # Link IDs of the end-effectors
+        # Respectively: FL, FR, BL, BR
+        foot_link_ids = [1, 3, 5, 7]
+        foot_contacts = [False] * 4
+
+        for i, foot_id in enumerate(foot_link_ids):
+            contact_points = p.getContactPoints(bodyA=self.robot, bodyB=self.surface.plane_id, linkIndexA=foot_id)
+            if len(contact_points) > 0:
+                foot_contacts[i] = True
+
+        not_on_ground = all(element == False for element in foot_contacts)
+        if not_on_ground:
+            return True
+        else:
+            return False
 
     def get_observation(self):
         
@@ -455,6 +473,7 @@ if __name__ == "__main__":
     done = False
     t = 0
     while not done:
+        print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
 
