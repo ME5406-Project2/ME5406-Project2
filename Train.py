@@ -55,7 +55,8 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
     if multiple_envs:
         env = make_vec_env(env_id=LeggedEnv,
                            n_envs=10,
-                           vec_env_cls=SubprocVecEnv)
+                           vec_env_cls=SubprocVecEnv,
+                           wrapper_class=DiscreteActionWrapper)
     else:
         # to use dummy env or actual env
         if use_dummy:
@@ -89,7 +90,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
@@ -114,7 +115,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
@@ -139,19 +140,19 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[256], pi=[256]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the SAC model
         if load_path is not None:
             # load a pre trained model
             # model at specified path will be overwritten if save path is the same as load path
             model = SAC.load(path=load_path, policy=policy, env=env, verbose=verbose,
                         learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+                        tensorboard_log=tensorboard_path)
             print("Model loaded from {}".format(load_path))
         else:
             model = SAC(policy=policy, env=env, verbose=verbose,
@@ -160,12 +161,12 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
 
     elif (algorithm=="TRPO"):
         policy = "MlpPolicy"
-        features_extractor_kwargs = dict(features_dim=num_features)
+        features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the TRPO model
         if load_path is not None:
             # load a pre trained model
@@ -186,12 +187,12 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
             features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
         else:
             policy = "MlpPolicy"
-            features_extractor_kwargs = dict(features_dim=num_features)
+            features_extractor_kwargs = dict()
         # Defining hyperparameters
         policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
-                             learning_rate=learning_rate)
+                            )
         # Defining the TD3 model
         if load_path is not None:
             # load a pre trained model
@@ -254,8 +255,8 @@ def make_dummy_env():
     env = DiscreteActionWrapper(env)
     return env
 
-def make_env():
-    env = LeggedEnv(use_gui=True)
+def make_env(use_gui=False):
+    env = LeggedEnv(use_gui=use_gui)
     # discretize actions using wrapper
     env = DiscreteActionWrapper(env)
     return env
@@ -286,5 +287,6 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    Train("PPO", num_timesteps=5e4)
+    # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
+    Train("SAC", num_timesteps=1e6, training_name='SACtest2')
