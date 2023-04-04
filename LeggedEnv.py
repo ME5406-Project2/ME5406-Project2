@@ -31,7 +31,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 1000
+        self.max_steps = 5000
         self.env_step_count = 0
         self.prev_dist = 0
 
@@ -77,6 +77,11 @@ class LeggedEnv(gym.Env):
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(33,), dtype=np.float64)
+        
+        # CPG timestep
+        self.t = 0
+        self.cpg_first = True
+        self.cpg_cnt = 0
 
     def spawn_robot(self):
         """
@@ -156,62 +161,88 @@ class LeggedEnv(gym.Env):
         self.generate_goal()
 
         # Step the simulation and return the initial observation
-        p.stepSimulation()
+        # p.stepSimulation()
         # time.sleep(1/240)
+        self.t = 0
+        self.cpg_first = True
 
         return self.get_observation()
     
     def step(self, action):
 
-        joint_velocities = []
+        if self.env_step_count > 200:
 
-        # Find the actions based on pre-defined mappings
-        for joint, index in enumerate(action):
-            joint_velocity = self.joint_to_action_map[joint][index]
-            joint_velocities.append(joint_velocity)
+            self.cpg_first = False
+            joint_velocities = []
 
-        # Check if joint limits exceeded
-        commanded_joint_positions = [0] * self.num_of_joints
-        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                       for i in range(self.num_of_joints)])
-        
-        for index in range(self.num_of_joints):
-            change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
-            commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
-        
-        # Joint limits actually exceeded
-        for index, joint_pos in enumerate(commanded_joint_positions):
-            if joint_pos < -1.57 or joint_pos > 1.57:
-                joint_velocities = self.prev_joint_velocities
-                
+            # Find the actions based on pre-defined mappings
+            for joint, index in enumerate(action):
+                joint_velocity = self.joint_to_action_map[joint][index]
+                joint_velocities.append(joint_velocity)
+            
+            # Check if joint limits exceeded
+            commanded_joint_positions = [0] * self.num_of_joints
+            current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
+                                        for i in range(self.num_of_joints)])
+            
+            for index in range(self.num_of_joints):
+                change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
+                commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
+            
+            # Joint limits actually exceeded
+            for index, joint_pos in enumerate(commanded_joint_positions):
+                if joint_pos < -1.57 or joint_pos > 1.57:
+                    joint_velocities = self.prev_joint_velocities
+                    
 
-        # Send action velocities to robot joints
-        p.setJointMotorControlArray(self.robot, self.actuators, 
-                                    p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
-        
-        # Step the simulation
-        p.stepSimulation()
-        # time.sleep(1/240)
-        self.env_step_count += 1
-        
-        # Get the observation
-        observation = self.get_observation()
+            # Send action velocities to robot joints
+            p.setJointMotorControlArray(self.robot, self.actuators, 
+                                        p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
+            
+            # Step the simulation
+            p.stepSimulation()
+            # time.sleep(1/240)
+            self.env_step_count += 1
+            
+            # Get the observation
+            observation = self.get_observation()
 
-        # Terminating conditions
-        # Reached goal
-        if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            done = True
-        # Episode timeout
-        if self.env_step_count >= self.max_steps:
-            done = True
+            # Terminating conditions
+            # Reached goal
+            if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+                done = True
+            # Episode timeout
+            if self.env_step_count >= self.max_steps:
+                done = True
+            else:
+                done = False
+
+            self.prev_dist = self.xyz_obj_dist_to_goal()
+
+            reward = self.get_reward()
+
+            self.prev_joint_velocities = self.joint_velocities
+
         else:
+
+            leg_positions = self.cpg_position_controller(self.t)
+            p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
+                                        p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
+            p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
+                                        p.POSITION_CONTROL, targetPositions=leg_positions)
+            p.stepSimulation()
+            # time.sleep(1/240)
+            self.env_step_count += 1
+            # Get the observation
+            observation = self.get_observation()
+
+            reward = 0
+
+            self.prev_joint_velocities = self.joint_velocities
+            self.t+=1/240
+
             done = False
 
-        self.prev_dist = self.xyz_obj_dist_to_goal()
-
-        reward = self.get_reward()
-
-        self.prev_joint_velocities = self.joint_velocities
     
         return observation, reward, done, {}
         
@@ -257,7 +288,10 @@ class LeggedEnv(gym.Env):
                 back_left_leg_pos, back_right_leg_pos]
     
     def cpg_step(self, t):
-        
+
+        if self.check_no_feet_on_ground():
+            self.cpg_cnt+=1
+
         leg_positions = self.cpg_position_controller(t)
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
@@ -318,11 +352,14 @@ class LeggedEnv(gym.Env):
         foot_contacts = [False] * 4
 
         for i, foot_id in enumerate(foot_link_ids):
-            contact_points = p.getContactPoints(bodyA=self.robot, bodyB=self.surface.plane_id, linkIndexA=foot_id)
+            contact_points = p.getContactPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=foot_id)
             if len(contact_points) > 0:
                 foot_contacts[i] = True
 
         not_on_ground = all(element == False for element in foot_contacts)
+
         if not_on_ground:
             return True
         else:
@@ -443,11 +480,11 @@ class LeggedEnv(gym.Env):
             self.goal_reward = 10
         # Robot is moving towards goal - Position
         elif self.prev_dist > self.xyz_obj_dist_to_goal():
-            self.position_reward = 0.1 * self.xyz_obj_dist_to_goal()
+            self.position_reward = 1.0 * self.xyz_obj_dist_to_goal()
             
         # Time-based penalty
         if self.env_step_count >= self.max_steps:
-            self.time_reward = -0.05
+            self.time_reward = -0.01
 
         # Encourage stability
         # Value of 1 means perfect stability, 0 means complete instability
@@ -455,7 +492,7 @@ class LeggedEnv(gym.Env):
         pitch = self.base_rpy[1]
         z_pos = self.base_pos[2]
         if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-            self.stability_reward = 0.02
+            self.stability_reward = 0.1
 
         # ADDITIONS TO BE MADE
         # Penalise staying in same place
