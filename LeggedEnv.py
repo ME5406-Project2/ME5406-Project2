@@ -1,3 +1,4 @@
+import math
 import gym
 import pybullet as p
 import pybullet_data
@@ -83,7 +84,7 @@ class LeggedEnv(gym.Env):
         """
         # Set the start pose of the robot
         self.robot_start_pos = [0, 0, 0.5]
-        self.robot_start_rpy = [90, 0, 0]
+        self.robot_start_rpy = [math.radians(90), 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
         # Load the robot URDF into PyBullet
@@ -476,6 +477,5 @@ if __name__ == "__main__":
         print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
-
 
         
