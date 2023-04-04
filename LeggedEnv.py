@@ -88,7 +88,7 @@ class LeggedEnv(gym.Env):
         Instantiates the robot in the simulation.
         """
         # Set the start pose of the robot
-        self.robot_start_pos = [0, 0, 0.5]
+        self.robot_start_pos = [0, 0, 0.80]
         self.robot_start_rpy = [math.radians(90), 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
@@ -159,6 +159,17 @@ class LeggedEnv(gym.Env):
         # Spawn the robot and goal box in simulation
         self.spawn_robot()
         self.generate_goal()
+
+        # wait until robot is stable for 100 consecutive counts
+        stable_count = 0
+        while (stable_count<100): #test
+            p.stepSimulation()
+            #stable_count += -1 if self.check_no_feet_on_ground() else 1
+            #stable_count = max(0, stable_count)
+            if self.check_no_feet_on_ground():
+                stable_count = 0
+            else:
+                stable_count+=1
 
         # Step the simulation and return the initial observation
         # p.stepSimulation()
