@@ -12,6 +12,7 @@ from stable_baselines3.common.callbacks import CallbackList, EvalCallback, Check
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import VecMonitor
 
 import os
 from LeggedEnv import LeggedEnv
@@ -20,15 +21,15 @@ from LeggedEnv import LeggedEnv
 use_dummy = False
 
 # Trains the agent and logs the training process onto tensorboard
-def Train(algorithm: string, num_vectorized_env: int = 1,
+def Train(algorithm: string, num_vectorized_env: int = 10,
           load_path: string = None,
           num_timesteps: int=1e6, num_features: int = 64,
           show_net_arch: bool = False,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training2", save_freq: int = 10000, eval_freq:int = 5000,
-          multiple_envs = True):
+          training_name: string = "unnamed_training", save_freq: int = 10000, eval_freq:int = 5000
+          ):
     """
     Trains the agent and logs the training process onto tensorboard
     :param algorithm: algorithm name
@@ -52,9 +53,9 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
     :param training_name: specify name of model trained
     :param save_freq: frequency to save model
     """
-    if multiple_envs:
+    if (num_vectorized_env>1):
         env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=10,
+                           n_envs=num_vectorized_env,
                            vec_env_cls=SubprocVecEnv,
                            wrapper_class=DiscreteActionWrapper)
     else:
@@ -214,7 +215,7 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
         print(model.policy)
 
     # callback for saving model at regular intervals
-    checkpoint_cb = CheckpointCallback(save_freq=save_freq, 
+    checkpoint_cb = CheckpointCallback(save_freq=max(save_freq // num_vectorized_env, 1), 
                                        save_path=save_path,
                                        name_prefix=training_name)
     
@@ -225,14 +226,19 @@ def Train(algorithm: string, num_vectorized_env: int = 1,
     # create seperate evaluation environment for evaluation
     if use_dummy:
         eval_env = make_dummy_env()
+        eval_env = Monitor(eval_env)
     else:
-        eval_env = make_env()
-    eval_env = Monitor(eval_env)
+        #eval_env = make_env()
+        eval_env = make_vec_env(env_id=LeggedEnv,
+                           n_envs=5,
+                           vec_env_cls=SubprocVecEnv,
+                           wrapper_class=DiscreteActionWrapper)
+    
 
     # callback for regular evaluation and save best model
     eval_cb = EvalCallback(eval_env=eval_env, 
                            best_model_save_path=best_model_path,
-                           log_path=results_path, eval_freq=eval_freq,
+                           log_path=results_path, eval_freq=max(eval_freq // num_vectorized_env, 1),
                            n_eval_episodes=10, callback_after_eval=stop_train_cb)
     
     # callback list
@@ -289,4 +295,5 @@ def copy_log_file(load_path, dst, algorithm):
 if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
-    Train("SAC", num_timesteps=1e6, training_name='SACtest2')
+    # Train("SAC", num_timesteps=5e5, training_name='SACtest')
+    Train("SAC", num_timesteps=5e4, training_name='vecEvalTest')
