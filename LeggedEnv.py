@@ -52,6 +52,16 @@ class LeggedEnv(gym.Env):
             6: np.array([-10, -5, 0, 5, 10]),
             7: np.array([-10, -5, 0, 5, 10]),
         }
+        # self.joint_to_action_map = {
+        #     0: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     1: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     2: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     3: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     4: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     5: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     6: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     7: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        # }
                 
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -70,11 +80,11 @@ class LeggedEnv(gym.Env):
         self.generate_goal()
         
         # Define action space
-        # actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
-        # self.action_space = MultiDiscrete(actions)
+        actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
+        self.action_space = MultiDiscrete(actions)
 
-        self.action_space = gym.spaces.Box(
-            low=-10, high=10, shape=(8,), dtype=np.float64)
+        # self.action_space = gym.spaces.Box(
+        #     low=-10, high=10, shape=(8,), dtype=np.float64)
 
         # Define observation spaces
         obs_shape = self.get_observation().shape
@@ -394,8 +404,6 @@ class LeggedEnv(gym.Env):
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
                                        for i in range(self.num_of_joints)])
-        
-        print(self.joint_velocities)
         
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
