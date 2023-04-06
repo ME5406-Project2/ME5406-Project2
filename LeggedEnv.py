@@ -197,13 +197,14 @@ class LeggedEnv(gym.Env):
         # if self.env_step_count > 200:
 
         # self.cpg_first = False
-        # joint_velocities = []
+        joint_velocities = []
 
-        # # Find the actions based on pre-defined mappings
-        # for joint, index in enumerate(action):
-        #     joint_velocity = self.joint_to_action_map[joint][index]
-        #     joint_velocities.append(joint_velocity)
+        # Find the actions based on pre-defined mappings
+        for joint, index in enumerate(action):
+            joint_velocity = self.joint_to_action_map[joint][index]
+            joint_velocities.append(joint_velocity)
         
+
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
         current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
@@ -215,13 +216,18 @@ class LeggedEnv(gym.Env):
         
         # Joint limits actually exceeded
         for index, joint_pos in enumerate(commanded_joint_positions):
-            if joint_pos < -1.57 or joint_pos > 1.57:
-                action = self.prev_joint_velocities
-                
-
+            if joint_pos < -1.57:
+                commanded_joint_positions[index] = -1.57
+            elif joint_pos > 1.57:
+                commanded_joint_positions[index] = 1.57
+        
+        #print("commanded_joint_positions", commanded_joint_positions)
         # Send action velocities to robot joints
         p.setJointMotorControlArray(self.robot, self.actuators, 
-                                    p.VELOCITY_CONTROL, targetVelocities=action)
+                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions,
+                                    positionGains = [0.1]*self.num_of_joints, 
+                                    velocityGains = [0]*self.num_of_joints,
+                                    forces = [100]*self.num_of_joints)
         
         # Step the simulation
         p.stepSimulation()
@@ -531,16 +537,48 @@ class LeggedEnv(gym.Env):
         
         return reward
     
+    def test_step(self, joint_num):
+        joint_velocities = []
 
+        joint_vel = 10
+        
+        # Check if joint limits exceeded
+        commanded_joint_positions = 0
+        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
+                                    for i in range(1)])
+        change_in_joint_pos = joint_vel
+        
+        commanded_joint_positions = current_joint_positions + change_in_joint_pos
+        
+        # Joint limits actually exceeded
+        if commanded_joint_positions < -math.radians(135):
+            commanded_joint_positions= -math.radians(135)
+        elif commanded_joint_positions > math.radians(135):
+            commanded_joint_positions = math.radians(135)
+        
+        print("commanded_joint_positions", commanded_joint_positions)
+        print("current joint pose", p.getJointState(self.robot, self.actuators[joint_num])[0])
+        # Send action velocities to robot joints
+
+        p.setJointMotorControl2(self.robot, joint_num,
+                               p.POSITION_CONTROL, targetPosition=commanded_joint_positions,
+                               positionGain = 0.1, velocityGain = 0, force = 100)
+        # Step the simulation
+        p.stepSimulation()
+        #print(p.getJointState(self.robot, self.actuators[1])[0])
+        time.sleep(1/240)
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
     env.reset()
     done = False
     t = 0
+    while True:
+        env.test_step(joint_num=4)
+    """
     while not done:
         print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
-
+    """
         
