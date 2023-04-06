@@ -28,7 +28,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training", save_freq: int = 10000, eval_freq:int = 5000
+          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 20000
           ):
     """
     Trains the agent and logs the training process onto tensorboard
@@ -239,7 +239,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     eval_cb = EvalCallback(eval_env=eval_env, 
                            best_model_save_path=best_model_path,
                            log_path=results_path, eval_freq=max(eval_freq // num_vectorized_env, 1),
-                           n_eval_episodes=10, callback_after_eval=stop_train_cb)
+                           n_eval_episodes=5, callback_after_eval=stop_train_cb)
     
     # callback list
     cb_list = CallbackList([checkpoint_cb, eval_cb])
@@ -296,4 +296,4 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("SAC", num_timesteps=5e4, training_name='vecEvalTest')
+    Train("SAC", num_timesteps=5e5, training_name='limlegtest')
