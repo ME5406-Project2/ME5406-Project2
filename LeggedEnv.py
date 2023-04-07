@@ -40,29 +40,37 @@ class LeggedEnv(gym.Env):
         self.position_reward = 0
         self.time_reward = 0
         self.stability_reward = 0
+        self.contact_reward = 0
 
         # Define joint-to-action mapping
-        self.joint_to_action_map = {
-            0: np.array([-10, -5, 0, 5, 10]),
-            1: np.array([-10, -5, 0, 5, 10]),
-            2: np.array([-10, -5, 0, 5, 10]),
-            3: np.array([-10, -5, 0, 5, 10]),
-            4: np.array([-10, -5, 0, 5, 10]),
-            5: np.array([-10, -5, 0, 5, 10]),
-            6: np.array([-10, -5, 0, 5, 10]),
-            7: np.array([-10, -5, 0, 5, 10]),
-        }
         # self.joint_to_action_map = {
-        #     0: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     1: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     2: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     3: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     4: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     5: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     6: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     7: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     0: np.array([-10, -5, 0, 5, 10]),
+        #     1: np.array([-10, -5, 0, 5, 10]),
+        #     2: np.array([-10, -5, 0, 5, 10]),
+        #     3: np.array([-10, -5, 0, 5, 10]),
+        #     4: np.array([-10, -5, 0, 5, 10]),
+        #     5: np.array([-10, -5, 0, 5, 10]),
+        #     6: np.array([-10, -5, 0, 5, 10]),
+        #     7: np.array([-10, -5, 0, 5, 10]),
         # }
-                
+        self.joint_to_action_map = {
+            0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            1: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            2: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            3: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            4: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            5: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            6: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            7: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        }         
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
         planeId = p.loadURDF("plane.urdf")
@@ -95,6 +103,7 @@ class LeggedEnv(gym.Env):
         self.t = 0
         self.cpg_first = True
         self.cpg_cnt = 0
+        self.store_joint_vel = []
 
     def spawn_robot(self):
         """
@@ -152,7 +161,25 @@ class LeggedEnv(gym.Env):
             p.enableJointForceTorqueSensor(self.robot, joint, 1)
 
     def reset(self):
+        # # open the file in write mode
+        # with open("jointvel.txt", "w") as file:
+        #     # iterate over the list of lists
+        #     for inner_list in self.store_joint_vel:
+        #         # convert the inner list to a string
+        #         inner_list_string = ",".join([str(x) for x in inner_list])
+
+        #         # write the inner list as a line in the file
+        #         file.write(inner_list_string + "\n")        
+        # file.close()
         # Reset reward and step count for episode
+
+        with open("jointvel.txt", "r") as file:
+
+            # read each line of the file and split it into a list
+            for line in file:
+                inner_list = [int(x) for x in line.strip().split(",")]
+                self.store_joint_vel.append(inner_list)
+
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -196,13 +223,13 @@ class LeggedEnv(gym.Env):
 
         # if self.env_step_count > 200:
 
-        # self.cpg_first = False
-        # joint_velocities = []
+        self.cpg_first = False
+        joint_velocities = []
 
-        # # Find the actions based on pre-defined mappings
-        # for joint, index in enumerate(action):
-        #     joint_velocity = self.joint_to_action_map[joint][index]
-        #     joint_velocities.append(joint_velocity)
+        # Find the actions based on pre-defined mappings
+        for joint, index in enumerate(action):
+            joint_velocity = self.joint_to_action_map[joint][index]
+            joint_velocities.append(joint_velocity)
         
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
@@ -210,18 +237,22 @@ class LeggedEnv(gym.Env):
                                     for i in range(self.num_of_joints)])
         
         for index in range(self.num_of_joints):
-            change_in_joint_pos = action[index] * (1 / 240.0)
+            change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
             commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
         
-        # Joint limits actually exceeded
-        for index, joint_pos in enumerate(commanded_joint_positions):
-            if joint_pos < -1.57 or joint_pos > 1.57:
-                action = self.prev_joint_velocities
-                
+        # # Joint limits actually exceeded
+        # for index, joint_pos in enumerate(commanded_joint_positions):
+        #     if joint_pos < -1.57 or joint_pos > 1.57:
+        #         joint_velocities = self.prev_joint_velocities
+        p.setJointMotorControlArray(self.robot, self.actuators,
+                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions,
+                                    positionGains=[0.1] * 8)
 
         # Send action velocities to robot joints
-        p.setJointMotorControlArray(self.robot, self.actuators, 
-                                    p.VELOCITY_CONTROL, targetVelocities=action)
+        # p.setJointMotorControlArray(self.robot, self.actuators, 
+        #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
+        
+        self.store_joint_vel.append(joint_velocities)
         
         # Step the simulation
         p.stepSimulation()
@@ -317,6 +348,18 @@ class LeggedEnv(gym.Env):
             self.cpg_cnt+=1
 
         leg_positions = self.cpg_position_controller(t)
+        # leg_velocities = [pos / (1/240) for pos in leg_positions]
+        # print(max(leg_velocities))
+        observation = self.get_observation()
+        cmd_joint_pos = [0] * 8
+
+        for idx, joint in enumerate(self.upper_joint_indeces):
+            cmd_joint_pos[joint] = -leg_positions[idx]
+
+        for idx, joint in enumerate(self.lower_joint_indeces):
+            cmd_joint_pos[joint] = leg_positions[idx]
+        leg_vel = (cmd_joint_pos - self.joint_positions)/(1/240)
+
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
@@ -396,7 +439,7 @@ class LeggedEnv(gym.Env):
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
-        
+        # print(self.joint_positions)
         # relative joint angle in radians
         # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
         self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
@@ -404,7 +447,6 @@ class LeggedEnv(gym.Env):
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
                                        for i in range(self.num_of_joints)])
-        
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
         max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
@@ -520,6 +562,8 @@ class LeggedEnv(gym.Env):
         if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
             self.stability_reward = 0.1
 
+        if self.check_no_feet_on_ground():
+            self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
         # Penalise staying in same place
         # Penalise sudden joint accelerations
@@ -527,10 +571,25 @@ class LeggedEnv(gym.Env):
 
         # Sum of all rewards
         reward = (self.goal_reward + self.position_reward + 
-                  self.time_reward + self.stability_reward)
+                  self.time_reward + self.stability_reward +
+                  self.contact_reward)
         
         return reward
     
+    def process_and_cmd_vel(self):
+        joint_pos_arr = []
+        for joint_vel in self.store_joint_vel:
+            joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
+                                       for i in range(self.num_of_joints)])
+            for idx, vel in enumerate(joint_vel):
+                change_in_joint_pos = vel 
+                joint_pos = joint_positions[idx] + change_in_joint_pos
+                joint_pos_arr.append(joint_pos)
+            # print(joint_pos_arr)
+            p.setJointMotorControlArray(self.robot, self.actuators, 
+                                        p.POSITION_CONTROL, targetVelocities=joint_pos_arr)
+            p.stepSimulation()
+            joint_pos_arr.clear()
 
 
 if __name__ == "__main__":
@@ -539,8 +598,10 @@ if __name__ == "__main__":
     done = False
     t = 0
     while not done:
-        print("on_ground", env.check_no_feet_on_ground())
+        # print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
+    # env.process_and_cmd_vel()
+    
 
         
