@@ -34,6 +34,7 @@ class LeggedEnv(gym.Env):
         self.max_steps = 2500
         self.env_step_count = 0
         self.prev_dist = 0
+        self.move_reward = 0
 
         # Initialise rewards
         self.goal_reward = 0
@@ -41,6 +42,7 @@ class LeggedEnv(gym.Env):
         self.time_reward = 0
         self.stability_reward = 0
         self.contact_reward = 0
+        self.reward = 0
 
         # Define joint-to-action mapping
         # self.joint_to_action_map = {
@@ -173,13 +175,13 @@ class LeggedEnv(gym.Env):
         # file.close()
         # Reset reward and step count for episode
 
-        with open("jointvel.txt", "r") as file:
+        # with open("jointvel.txt", "r") as file:
 
-            # read each line of the file and split it into a list
-            for line in file:
-                inner_list = [int(x) for x in line.strip().split(",")]
-                self.store_joint_vel.append(inner_list)
-
+        #     # read each line of the file and split it into a list
+        #     for line in file:
+        #         inner_list = [int(x) for x in line.strip().split(",")]
+        #         self.store_joint_vel.append(inner_list)
+        # print(self.reward)
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -239,14 +241,12 @@ class LeggedEnv(gym.Env):
         for index in range(self.num_of_joints):
             change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
             commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
-        
         # # Joint limits actually exceeded
         # for index, joint_pos in enumerate(commanded_joint_positions):
         #     if joint_pos < -1.57 or joint_pos > 1.57:
         #         joint_velocities = self.prev_joint_velocities
         p.setJointMotorControlArray(self.robot, self.actuators,
-                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions,
-                                    positionGains=[0.1] * 8)
+                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
 
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
@@ -272,9 +272,9 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        self.prev_dist = self.xyz_obj_dist_to_goal()
-
         reward = self.get_reward()
+        self.reward += 0
+        self.prev_dist = self.xyz_obj_dist_to_goal()
 
         self.prev_joint_velocities = self.joint_velocities
 
@@ -378,6 +378,7 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
             print("GOAL REACHED")
+            print(self.reward)
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
@@ -385,9 +386,9 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        self.prev_dist = self.xyz_obj_dist_to_goal()
-
         reward = self.get_reward()
+        self.reward += reward
+        self.prev_dist = self.xyz_obj_dist_to_goal()
     
         return observation, reward, done
         
@@ -465,6 +466,7 @@ class LeggedEnv(gym.Env):
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
         self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
+        # print("baselinvel",self.base_lin_vel)
 
         # normalize linear and angular velocities [] -> [-1,1]
         # limits for linear and angular velocity cannot be set in URDF
@@ -545,35 +547,43 @@ class LeggedEnv(gym.Env):
     def get_reward(self):
         # Goal reached
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            self.goal_reward = 10
+            self.goal_reward = 500
+        else:
+            self.goal_reward = 0
         # Robot is moving towards goal - Position
-        elif self.prev_dist > self.xyz_obj_dist_to_goal():
+        if self.prev_dist > self.xyz_obj_dist_to_goal():
             self.position_reward = 1.0 * self.xyz_obj_dist_to_goal()
+
+        # Robot is moving
+        self.move_reward = 2.0 * self.base_lin_vel[0]
+
+        # print("pos_reward", self.position_reward)
+        # print("movreward", self.move_reward)
+
+        # print("prev_dist", self.prev_dist)
+        # print("xyz_dist_to_goal", self.xyz_obj_dist_to_goal())
             
         # Time-based penalty
-        if self.env_step_count >= self.max_steps:
-            self.time_reward = -0.01
+        # if self.env_step_count >= self.max_steps:
+        #     self.time_reward = -0.01
 
-        # Encourage stability
-        # Value of 1 means perfect stability, 0 means complete instability
-        roll = self.base_rpy[0]
-        pitch = self.base_rpy[1]
-        z_pos = self.base_pos[2]
-        if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-            self.stability_reward = 0.1
+        # # Encourage stability
+        # # Value of 1 means perfect stability, 0 means complete instability
+        # roll = self.base_rpy[0]
+        # pitch = self.base_rpy[1]
+        # z_pos = self.base_pos[2]
+        # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
+        #     self.stability_reward = 0.1
 
-        if self.check_no_feet_on_ground():
-            self.contact_reward = -0.01
+        # if self.check_no_feet_on_ground():
+        #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
         # Penalise staying in same place
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = (self.goal_reward + self.position_reward + 
-                  self.time_reward + self.stability_reward +
-                  self.contact_reward)
-        
+        reward = -(-self.goal_reward + self.position_reward)
         return reward
     
     def process_and_cmd_vel(self):
