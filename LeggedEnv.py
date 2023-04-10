@@ -34,35 +34,45 @@ class LeggedEnv(gym.Env):
         self.max_steps = 2500
         self.env_step_count = 0
         self.prev_dist = 0
+        self.move_reward = 0
 
         # Initialise rewards
         self.goal_reward = 0
         self.position_reward = 0
         self.time_reward = 0
         self.stability_reward = 0
+        self.contact_reward = 0
+        self.reward = 0
 
         # Define joint-to-action mapping
-        self.joint_to_action_map = {
-            0: np.array([-10, -5, 0, 5, 10]),
-            1: np.array([-10, -5, 0, 5, 10]),
-            2: np.array([-10, -5, 0, 5, 10]),
-            3: np.array([-10, -5, 0, 5, 10]),
-            4: np.array([-10, -5, 0, 5, 10]),
-            5: np.array([-10, -5, 0, 5, 10]),
-            6: np.array([-10, -5, 0, 5, 10]),
-            7: np.array([-10, -5, 0, 5, 10]),
-        }
         # self.joint_to_action_map = {
-        #     0: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     1: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     2: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     3: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     4: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     5: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     6: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
-        #     7: np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]),
+        #     0: np.array([-10, -5, 0, 5, 10]),
+        #     1: np.array([-10, -5, 0, 5, 10]),
+        #     2: np.array([-10, -5, 0, 5, 10]),
+        #     3: np.array([-10, -5, 0, 5, 10]),
+        #     4: np.array([-10, -5, 0, 5, 10]),
+        #     5: np.array([-10, -5, 0, 5, 10]),
+        #     6: np.array([-10, -5, 0, 5, 10]),
+        #     7: np.array([-10, -5, 0, 5, 10]),
         # }
-                
+        self.joint_to_action_map = {
+            0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            1: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            2: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            3: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            4: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            5: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            6: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+            7: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        }         
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
         planeId = p.loadURDF("plane.urdf")
@@ -95,6 +105,7 @@ class LeggedEnv(gym.Env):
         self.t = 0
         self.cpg_first = True
         self.cpg_cnt = 0
+        self.store_joint_vel = []
 
     def spawn_robot(self):
         """
@@ -152,7 +163,25 @@ class LeggedEnv(gym.Env):
             p.enableJointForceTorqueSensor(self.robot, joint, 1)
 
     def reset(self):
+        # # open the file in write mode
+        # with open("jointvel.txt", "w") as file:
+        #     # iterate over the list of lists
+        #     for inner_list in self.store_joint_vel:
+        #         # convert the inner list to a string
+        #         inner_list_string = ",".join([str(x) for x in inner_list])
+
+        #         # write the inner list as a line in the file
+        #         file.write(inner_list_string + "\n")        
+        # file.close()
         # Reset reward and step count for episode
+
+        # with open("jointvel.txt", "r") as file:
+
+        #     # read each line of the file and split it into a list
+        #     for line in file:
+        #         inner_list = [int(x) for x in line.strip().split(",")]
+        #         self.store_joint_vel.append(inner_list)
+        # print(self.reward)
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -196,7 +225,7 @@ class LeggedEnv(gym.Env):
 
         # if self.env_step_count > 200:
 
-        # self.cpg_first = False
+        self.cpg_first = False
         joint_velocities = []
 
         # Find the actions based on pre-defined mappings
@@ -211,7 +240,7 @@ class LeggedEnv(gym.Env):
                                     for i in range(self.num_of_joints)])
         
         for index in range(self.num_of_joints):
-            change_in_joint_pos = action[index] * (1 / 240.0)
+            change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
             commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
         
         # Joint limits actually exceeded
@@ -222,10 +251,18 @@ class LeggedEnv(gym.Env):
                 commanded_joint_positions[index] = 1.57
         
         #print("commanded_joint_positions", commanded_joint_positions)
+        # # Joint limits actually exceeded
+        # for index, joint_pos in enumerate(commanded_joint_positions):
+        #     if joint_pos < -1.57 or joint_pos > 1.57:
+        #         joint_velocities = self.prev_joint_velocities
+        p.setJointMotorControlArray(self.robot, self.actuators,
+                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
+
         # Send action velocities to robot joints
-        p.setJointMotorControlArray(self.robot, self.actuators, 
-                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions,
-                                    )
+        # p.setJointMotorControlArray(self.robot, self.actuators, 
+        #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
+        
+        self.store_joint_vel.append(joint_velocities)
         
         # Step the simulation
         p.stepSimulation()
@@ -245,9 +282,9 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        self.prev_dist = self.xyz_obj_dist_to_goal()
-
         reward = self.get_reward()
+        self.reward += 0
+        self.prev_dist = self.xyz_obj_dist_to_goal()
 
         self.prev_joint_velocities = self.joint_velocities
 
@@ -321,6 +358,18 @@ class LeggedEnv(gym.Env):
             self.cpg_cnt+=1
 
         leg_positions = self.cpg_position_controller(t)
+        # leg_velocities = [pos / (1/240) for pos in leg_positions]
+        # print(max(leg_velocities))
+        observation = self.get_observation()
+        cmd_joint_pos = [0] * 8
+
+        for idx, joint in enumerate(self.upper_joint_indeces):
+            cmd_joint_pos[joint] = -leg_positions[idx]
+
+        for idx, joint in enumerate(self.lower_joint_indeces):
+            cmd_joint_pos[joint] = leg_positions[idx]
+        leg_vel = (cmd_joint_pos - self.joint_positions)/(1/240)
+
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
@@ -339,6 +388,7 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
             print("GOAL REACHED")
+            print(self.reward)
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
@@ -346,9 +396,9 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        self.prev_dist = self.xyz_obj_dist_to_goal()
-
         reward = self.get_reward()
+        self.reward += reward
+        self.prev_dist = self.xyz_obj_dist_to_goal()
     
         return observation, reward, done
         
@@ -400,7 +450,7 @@ class LeggedEnv(gym.Env):
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
-        
+        # print(self.joint_positions)
         # relative joint angle in radians
         # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
         self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
@@ -408,7 +458,6 @@ class LeggedEnv(gym.Env):
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
                                        for i in range(self.num_of_joints)])
-        
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
         max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
@@ -427,6 +476,7 @@ class LeggedEnv(gym.Env):
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
         self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
+        # print("baselinvel",self.base_lin_vel)
 
         # normalize linear and angular velocities [] -> [-1,1]
         # limits for linear and angular velocity cannot be set in URDF
@@ -507,64 +557,60 @@ class LeggedEnv(gym.Env):
     def get_reward(self):
         # Goal reached
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            self.goal_reward = 10
+            self.goal_reward = 500
+        else:
+            self.goal_reward = 0
         # Robot is moving towards goal - Position
-        elif self.prev_dist > self.xyz_obj_dist_to_goal():
+        if self.prev_dist > self.xyz_obj_dist_to_goal():
             self.position_reward = 1.0 * self.xyz_obj_dist_to_goal()
+
+        # Robot is moving
+        self.move_reward = 2.0 * self.base_lin_vel[0]
+
+        # print("pos_reward", self.position_reward)
+        # print("movreward", self.move_reward)
+
+        # print("prev_dist", self.prev_dist)
+        # print("xyz_dist_to_goal", self.xyz_obj_dist_to_goal())
             
         # Time-based penalty
-        if self.env_step_count >= self.max_steps:
-            self.time_reward = -0.01
+        # if self.env_step_count >= self.max_steps:
+        #     self.time_reward = -0.01
 
-        # Encourage stability
-        # Value of 1 means perfect stability, 0 means complete instability
-        roll = self.base_rpy[0]
-        pitch = self.base_rpy[1]
-        z_pos = self.base_pos[2]
-        if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-            self.stability_reward = 0.1
+        # # Encourage stability
+        # # Value of 1 means perfect stability, 0 means complete instability
+        # roll = self.base_rpy[0]
+        # pitch = self.base_rpy[1]
+        # z_pos = self.base_pos[2]
+        # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
+        #     self.stability_reward = 0.1
 
+        # if self.check_no_feet_on_ground():
+        #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
         # Penalise staying in same place
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = (self.goal_reward + self.position_reward + 
-                  self.time_reward + self.stability_reward)
-        
+        reward = -(-self.goal_reward + self.position_reward)
         return reward
     
-    def test_step(self, joint_num):
-        joint_velocities = []
+    def process_and_cmd_vel(self):
+        joint_pos_arr = []
+        for joint_vel in self.store_joint_vel:
+            joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
+                                       for i in range(self.num_of_joints)])
+            for idx, vel in enumerate(joint_vel):
+                change_in_joint_pos = vel 
+                joint_pos = joint_positions[idx] + change_in_joint_pos
+                joint_pos_arr.append(joint_pos)
+            # print(joint_pos_arr)
+            p.setJointMotorControlArray(self.robot, self.actuators, 
+                                        p.POSITION_CONTROL, targetVelocities=joint_pos_arr)
+            p.stepSimulation()
+            joint_pos_arr.clear()
 
-        joint_vel = 10
-        
-        # Check if joint limits exceeded
-        commanded_joint_positions = 0
-        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                    for i in range(1)])
-        change_in_joint_pos = joint_vel
-        
-        commanded_joint_positions = current_joint_positions + change_in_joint_pos
-        
-        # Joint limits actually exceeded
-        if commanded_joint_positions < -math.radians(135):
-            commanded_joint_positions= -math.radians(135)
-        elif commanded_joint_positions > math.radians(135):
-            commanded_joint_positions = math.radians(135)
-        
-        print("commanded_joint_positions", commanded_joint_positions)
-        print("current joint pose", p.getJointState(self.robot, self.actuators[joint_num])[0])
-        # Send action velocities to robot joints
-
-        p.setJointMotorControl2(self.robot, joint_num,
-                               p.POSITION_CONTROL, targetPosition=commanded_joint_positions
-                               )
-        # Step the simulation
-        p.stepSimulation()
-        #print(p.getJointState(self.robot, self.actuators[1])[0])
-        time.sleep(1/240)
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
@@ -575,8 +621,10 @@ if __name__ == "__main__":
         env.test_step(joint_num=6)
     """
     while not done:
-        print("on_ground", env.check_no_feet_on_ground())
+        # print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
+    # env.process_and_cmd_vel()
+    
     """
         

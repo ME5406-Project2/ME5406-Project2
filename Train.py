@@ -3,7 +3,7 @@ import string
 import gym
 from DiscreteWrapper import DiscreteActionWrapper
 from stable_baselines3 import PPO, SAC, DDPG, TD3
-from sb3_contrib import TRPO
+# from sb3_contrib import TRPO
 from CustomNetwork import (Custom_DDPG_Policy, Custom_PPO_Policy, 
                            Custom_SAC_Policy, Custom_TD3_Policy, 
                            Custom_TRPO_Policy)
@@ -160,26 +160,26 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
                         learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
                         policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
-    elif (algorithm=="TRPO"):
-        policy = "MlpPolicy"
-        features_extractor_kwargs = dict()
-        # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
-                             features_extractor_kwargs=features_extractor_kwargs,
-                             share_features_extractor=share_features_extractor,
-                            )
-        # Defining the TRPO model
-        if load_path is not None:
-            # load a pre trained model
-            # model at specified path will be overwritten if save path is the same as load path
-            model = TRPO.load(path=load_path, policy=policy, env=env, verbose=verbose,
-                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
-            print("Model loaded from {}".format(load_path))
-        else:
-            model = TRPO(policy=policy, env=env, verbose=verbose,
-                        learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+    # elif (algorithm=="TRPO"):
+    #     policy = "MlpPolicy"
+    #     features_extractor_kwargs = dict()
+    #     # Defining hyperparameters
+    #     policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
+    #                          features_extractor_kwargs=features_extractor_kwargs,
+    #                          share_features_extractor=share_features_extractor,
+    #                         )
+    #     # Defining the TRPO model
+    #     if load_path is not None:
+    #         # load a pre trained model
+    #         # model at specified path will be overwritten if save path is the same as load path
+    #         model = TRPO.load(path=load_path, policy=policy, env=env, verbose=verbose,
+    #                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+    #                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+    #         print("Model loaded from {}".format(load_path))
+    #     else:
+    #         model = TRPO(policy=policy, env=env, verbose=verbose,
+    #                     learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
+    #                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
 
     elif (algorithm=="TD3"):
         # Defining policy to be used
