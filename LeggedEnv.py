@@ -225,9 +225,7 @@ class LeggedEnv(gym.Env):
         # Send action velocities to robot joints
         p.setJointMotorControlArray(self.robot, self.actuators, 
                                     p.POSITION_CONTROL, targetPositions=commanded_joint_positions,
-                                    positionGains = [0.1]*self.num_of_joints, 
-                                    velocityGains = [0]*self.num_of_joints,
-                                    forces = [100]*self.num_of_joints)
+                                    )
         
         # Step the simulation
         p.stepSimulation()
@@ -561,8 +559,8 @@ class LeggedEnv(gym.Env):
         # Send action velocities to robot joints
 
         p.setJointMotorControl2(self.robot, joint_num,
-                               p.POSITION_CONTROL, targetPosition=commanded_joint_positions,
-                               positionGain = 0.1, velocityGain = 0, force = 100)
+                               p.POSITION_CONTROL, targetPosition=commanded_joint_positions
+                               )
         # Step the simulation
         p.stepSimulation()
         #print(p.getJointState(self.robot, self.actuators[1])[0])
@@ -574,7 +572,7 @@ if __name__ == "__main__":
     done = False
     t = 0
     while True:
-        env.test_step(joint_num=4)
+        env.test_step(joint_num=6)
     """
     while not done:
         print("on_ground", env.check_no_feet_on_ground())
