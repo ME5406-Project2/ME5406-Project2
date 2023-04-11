@@ -65,4 +65,11 @@ if __name__ == "__main__":
     #Validation("SAC", "./trained_models/SAC_test/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/SAC_test_260000_steps.zip", eval_eps=1)
     #Validation("SAC_test", "./trained_models/SACtest/best_model/best_model.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/limlegtest/limlegtest_500000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/limlegtest/limlegtest_500000_steps.zip", eval_eps=1)
+    
+    #Validation("SAC", "./trained_models/timesteptest/timesteptest_1000000_steps.zip", eval_eps=1)
+    # managed to reach goal but legs broke and slid to goal instead of walking, unbounded max force
+    Validation("SAC", "./trained_models/timesteptest/best_model/best_model.zip", eval_eps=1)
+
+    #Validation("SAC", "./trained_models/increase_1000_vel_rwd/increase_1000_vel_rwd_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/increase_1000_vel_rwd_no_lstm/increase_1000_vel_rwd_no_LSTM_1000000_steps.zip", eval_eps=1)

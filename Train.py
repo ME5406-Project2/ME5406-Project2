@@ -296,4 +296,10 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("SAC", num_timesteps=5e5, training_name='limlegtest')
+    #Train("SAC", num_timesteps=1e6, training_name='timesteptest')
+    # increase vel rwd mulitplier to 10 & max forces = 20
+    # Train("SAC", num_timesteps=1e6, training_name='increase_vel_rwd', num_vectorized_env=15)
+    # increase vel rwd mulitplier to 100 & max forces = inf
+    # Train("SAC", num_timesteps=1e6, training_name='increase_1000_vel_rwd', num_vectorized_env=20)
+    # same as above but no LSTM model
+    Train("SAC", num_timesteps=1e6, training_name='increase_1000_vel_rwd_no_LSTM', num_vectorized_env=20, use_LSTM=False)
