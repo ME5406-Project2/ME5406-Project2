@@ -93,7 +93,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64, 64], pi=[64, 64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor)
         # Defining the DDPG model
@@ -143,7 +143,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[256], pi=[256]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64,64], pi=[64,64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
                             )
@@ -190,7 +190,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64, 64], pi=[64, 64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
                             )
@@ -296,10 +296,27 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    #Train("SAC", num_timesteps=1e6, training_name='timesteptest')
+    # Train("SAC", num_timesteps=1e6, training_name='timesteptest')
     # increase vel rwd mulitplier to 10 & max forces = 20
     # Train("SAC", num_timesteps=1e6, training_name='increase_vel_rwd', num_vectorized_env=15)
     # increase vel rwd mulitplier to 100 & max forces = inf
     # Train("SAC", num_timesteps=1e6, training_name='increase_1000_vel_rwd', num_vectorized_env=20)
     # same as above but no LSTM model
-    Train("SAC", num_timesteps=1e6, training_name='increase_1000_vel_rwd_no_LSTM', num_vectorized_env=20, use_LSTM=False)
+    # Train("SAC", num_timesteps=1e6, training_name='increase_1000_vel_rwd_no_LSTM', num_vectorized_env=20, use_LSTM=False)
+    # same as above but normalized all obs to [-1,1] no LSTM
+    # Train("SAC", num_timesteps=1e6, training_name='limit_obs_test', num_vectorized_env=20, use_LSTM=False)
+    # removed approach reward and simplified nn model
+    # Train("SAC", num_timesteps=1e6, training_name='simpler_model_test', num_vectorized_env=20, use_LSTM=False)
+    # Change reward and obs to that of paper
+    # Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=20, use_LSTM=False)
+    # Reduce timestep penalty to -0.0005
+    #Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=20, use_LSTM=False)
+    # Added function to terminate when torso is too low
+    # Train("SAC", num_timesteps=1e6, training_name='test3', num_vectorized_env=20, use_LSTM=False)
+    # improved terminating function to include contact or too close
+    #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=20, use_LSTM=False)
+    # Relaxed is dead condition, increase dead penalty
+    #Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=20, use_LSTM=False)
+    Train("SAC", num_timesteps=2e6, training_name='test6', num_vectorized_env=20, use_LSTM=False)
+
+    
