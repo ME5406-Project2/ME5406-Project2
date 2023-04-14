@@ -586,9 +586,10 @@ class LeggedEnv(gym.Env):
             self.goal_reward = 0
         # Robot is moving towards goal - Position
         self.position_reward = 10.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3)
-
+        self.position_reward = max(self.position_reward, 0)
+        
         # Robot is moving
-        self.move_reward = 100*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
+        self.move_reward = 1*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
 
         # time step penalty
         time_step_penalty = -0.005
@@ -596,7 +597,7 @@ class LeggedEnv(gym.Env):
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
         if self.is_dead:
-            dead_penalty = -10
+            dead_penalty = -500
         # print("pos_reward", self.position_reward)
         # print("movreward", self.move_reward)
 
@@ -607,13 +608,16 @@ class LeggedEnv(gym.Env):
         # if self.env_step_count >= self.max_steps:
         #     self.time_reward = -0.01
 
-        # # Encourage stability
-        # # Value of 1 means perfect stability, 0 means complete instability
-        # roll = self.base_rpy[0]
-        # pitch = self.base_rpy[1]
-        # z_pos = self.base_pos[2]
-        # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-        #     self.stability_reward = 0.1
+        # Encourage stability
+        # Value of 1 means perfect stability, 0 means complete instability
+        roll = self.base_rpy[0]
+        pitch = self.base_rpy[1]
+        z_pos = self.base_pos[2]
+        if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
+            self.stability_reward = 1 #0.1
+
+        # penalize for too much tilting forward or backwards
+        pitch_reward = -10 * pitch**2
 
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
@@ -623,7 +627,7 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = (self.goal_reward + self.position_reward + time_step_penalty + dead_penalty)
+        reward = (self.goal_reward + self.position_reward + time_step_penalty + dead_penalty + self.move_reward)
         return reward
     
     def process_and_cmd_vel(self):
@@ -647,6 +651,10 @@ class LeggedEnv(gym.Env):
                                                 linkIndexA=-1,
                                                 distance=0.15)
         contact_points = p.getContactPoints(bodyA=self.robot, bodyB=self.surface.plane_id, linkIndexA=-1)
+
+        roll = self.base_rpy[0]
+        pitch = self.base_rpy[1]
+        
         is_unrecoverable = False
         # Height of torso is too low (less than 0.2 of original height)
         if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
@@ -656,6 +664,9 @@ class LeggedEnv(gym.Env):
             is_unrecoverable = True
         # Torso of robot is very close to ground
         if (len(closest_points) > 0):
+            is_unrecoverable = True
+        # Pitch and Roll is too large
+        if (abs(pitch) > math.radians(40) or abs(roll) > math.radians(40)):
             is_unrecoverable = True
         return is_unrecoverable
              

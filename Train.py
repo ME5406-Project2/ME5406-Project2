@@ -317,6 +317,16 @@ if __name__ == "__main__":
     #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=20, use_LSTM=False)
     # Relaxed is dead condition, increase dead penalty
     #Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=20, use_LSTM=False)
-    Train("SAC", num_timesteps=2e6, training_name='test6', num_vectorized_env=20, use_LSTM=False)
-
-    
+    #Train("SAC", num_timesteps=2e6, training_name='test6', num_vectorized_env=20, use_LSTM=False)
+    # same as test6 but added LSTM
+    #Train("SAC", num_timesteps=1e6, training_name='test7', num_vectorized_env=20, use_LSTM=True)
+    # same as test6 but remove penalty for moving backwards and added velocity reward
+    #Train("SAC", num_timesteps=1e6, training_name='test8', num_vectorized_env=20, use_LSTM=False)
+    # same as test8 but add stability reward and removed velocity reward, not working very well
+    # Train("SAC", num_timesteps=1e6, training_name='test9', num_vectorized_env=20, use_LSTM=False)
+    # same as test8 but add stability reward and remove velocity reward
+    #Train("SAC", num_timesteps=1e6, training_name='test10', num_vectorized_env=20, use_LSTM=False)
+    # same as test10 but added terminal condition when pitch / roll > 40 degrees and added velocity reward scaled down
+    #Train("SAC", num_timesteps=1e6, training_name='test11', num_vectorized_env=20, use_LSTM=False)
+    # same as test11 but increase dead penalty to -500
+    Train("SAC", num_timesteps=1e6, training_name='test12', num_vectorized_env=20, use_LSTM=False)
