@@ -43,7 +43,8 @@ class LeggedEnv(gym.Env):
         self.stability_reward = 0
         self.contact_reward = 0
         self.reward = 0
-        self.prev_base_lin_vel_x = 0
+        self.prev_base_lin_vel = 0
+        self.work_done_reward = 0
 
         self.prev_contact_pos = None
         self.stride_length = 0
@@ -101,13 +102,13 @@ class LeggedEnv(gym.Env):
         #     low=-10, high=10, shape=(8,), dtype=np.float64)
 
         # Define observation spaces
-        obs_shape = self.get_observation().shape
+        # obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=obs_shape, dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=(168,), dtype=np.float64)
         
         # Buffer for history stacking of observations
         self.buffer_size = 4
-        self.buffer = np.zeros((self.buffer_size, obs_shape[0]))
+        self.obs_buffer = np.zeros((self.buffer_size, 42))
         
         # CPG timestep
         self.t = 0
@@ -272,12 +273,12 @@ class LeggedEnv(gym.Env):
         # Get the observation
         observation = self.get_observation()
 
-        # Update buffer
-        self.buffer[:-1] = self.buffer[1:]
-        self.buffer[-1] = observation
+        # # Update buffer
+        # self.buffer[:-1] = self.buffer[1:]
+        # self.buffer[-1] = observation
 
-        # Concatenate observations
-        stacked_observations = np.concatenate(self.buffer, axis=0)
+        # # Concatenate observations
+        # stacked_observations = np.concatenate(self.buffer, axis=0)
 
         # Terminating conditions
         # Reached goal
@@ -290,11 +291,13 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward()
-        self.reward += 0
+        # if isinstance(reward, np.ndarray):
+        #     reward = reward[0]
+        # self.reward += 0
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
         self.prev_joint_velocities = self.joint_velocities
-        self.prev_base_lin_vel_x = np.array(p.getBaseVelocity(self.robot)[0])
+        self.prev_base_lin_vel = p.getBaseVelocity(self.robot)[0][0]
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
         # else:
@@ -316,8 +319,9 @@ class LeggedEnv(gym.Env):
         #     self.t+=1/240
 
         #     done = False
-    
-        return stacked_observations, reward, done, {}
+        
+        
+        return observation, reward, done, {}
         
     def xyz_obj_dist_to_goal(self):
 
@@ -392,11 +396,11 @@ class LeggedEnv(gym.Env):
         observation = self.get_observation()
 
         # Update buffer
-        self.buffer[:-1] = self.buffer[1:]
-        self.buffer[-1] = observation
+        # self.buffer[:-1] = self.buffer[1:]
+        # self.buffer[-1] = observation
 
-        # Concatenate observations
-        stacked_observations = np.concatenate(self.buffer, axis=0)
+        # # Concatenate observations
+        # stacked_observations = np.concatenate(self.buffer, axis=0)
 
         # Terminating conditions
         # Reached goal
@@ -417,10 +421,10 @@ class LeggedEnv(gym.Env):
 
         stridelen = self.calc_stride_length()
 
-        self.prev_base_lin_vel_x = np.array(p.getBaseVelocity(self.robot)[0])
+        self.prev_base_lin_vel = p.getBaseVelocity(self.robot)[0][0]
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
     
-        return stacked_observations, reward, done
+        return observation, reward, done
         
     def get_end_effector_pose(self):
         
@@ -614,10 +618,17 @@ class LeggedEnv(gym.Env):
             np.array(self.relative_goal_vect, dtype=np.float64),
             *leg_pos_robot_frame_norm
         ])
+
+        # Update buffer
+        self.obs_buffer[:-1] = self.obs_buffer[1:]
+        self.obs_buffer[-1] = observation
+
+        # Concatenate observations
+        stacked_observations = np.concatenate(self.obs_buffer, axis=0)
         # Additions to be made
         # CoG in robot frame
 
-        return observation
+        return stacked_observations
     
     def get_reward(self):
         # Goal reached
@@ -631,7 +642,7 @@ class LeggedEnv(gym.Env):
         self.position_reward = 0.75 * self.xyz_obj_dist_to_goal()
 
         # Robot is moving
-        self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel_x)
+        self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
 
         # Penalise work done
         # Get the joint states for the current and next states
@@ -645,6 +656,8 @@ class LeggedEnv(gym.Env):
             joint_displacement = current_joint_states[i][0] - joint_state[0]
             joint_work = joint_torque * joint_displacement
             work_done += joint_work
+
+        self.work_done_reward = 0.0001*work_done
 
         # print("pos_reward", self.position_reward)
         # print("movreward", self.move_reward)
@@ -672,7 +685,7 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = -(self.position_reward - self.move_reward + 0.001*work_done)
+        reward = -(self.position_reward - self.move_reward + self.work_done_reward)
         return reward
     
     def process_and_cmd_vel(self):
