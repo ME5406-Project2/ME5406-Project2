@@ -43,6 +43,10 @@ class LeggedEnv(gym.Env):
         self.stability_reward = 0
         self.contact_reward = 0
         self.reward = 0
+        self.prev_base_lin_vel_x = 0
+
+        self.prev_contact_pos = None
+        self.stride_length = 0
 
         # Define joint-to-action mapping
         # self.joint_to_action_map = {
@@ -99,7 +103,11 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(33,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=obs_shape, dtype=np.float64)
+        
+        # Buffer for history stacking of observations
+        self.buffer_size = 4
+        self.buffer = np.zeros((self.buffer_size, obs_shape[0]))
         
         # CPG timestep
         self.t = 0
@@ -113,12 +121,12 @@ class LeggedEnv(gym.Env):
         """
         # Set the start pose of the robot
         self.robot_start_pos = [0, 0, 0.80]
-        self.robot_start_rpy = [math.radians(90), 0, 0]
+        self.robot_start_rpy = [0, 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
         # Load the robot URDF into PyBullet
         self.robot = p.loadURDF(
-            "assembly/Assem1_v3.SLDASM/urdf/Assem1_v3.SLDASM.urdf", 
+            "assembly/Assem1_v4.SLDASM/urdf/Assem1_v4.SLDASM.urdf", 
             self.robot_start_pos, 
             self.robot_start_orn)
 
@@ -162,6 +170,8 @@ class LeggedEnv(gym.Env):
         for joint in self.actuators:
             p.enableJointForceTorqueSensor(self.robot, joint, 1)
 
+        self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
+
     def reset(self):
         # # open the file in write mode
         # with open("jointvel.txt", "w") as file:
@@ -196,22 +206,22 @@ class LeggedEnv(gym.Env):
             texture_path="wood.png",
             lateral_friction=1.0,
             spinning_friction=1.0,
-            rolling_friction=0.0)
+            rolling_friction=1.0)
         
         # Spawn the robot and goal box in simulation
         self.spawn_robot()
         self.generate_goal()
 
         # wait until robot is stable for 100 consecutive counts
-        stable_count = 0
-        while (stable_count<100): #test
-            p.stepSimulation()
-            #stable_count += -1 if self.check_no_feet_on_ground() else 1
-            #stable_count = max(0, stable_count)
-            if self.check_no_feet_on_ground():
-                stable_count = 0
-            else:
-                stable_count+=1
+        # stable_count = 0
+        # while (stable_count<100): #test
+        #     p.stepSimulation()
+        #     #stable_count += -1 if self.check_no_feet_on_ground() else 1
+        #     #stable_count = max(0, stable_count)
+        #     if self.check_no_feet_on_ground():
+        #         stable_count = 0
+        #     else:
+        #         stable_count+=1
 
         # Step the simulation and return the initial observation
         # p.stepSimulation()
@@ -262,12 +272,19 @@ class LeggedEnv(gym.Env):
         # Get the observation
         observation = self.get_observation()
 
+        # Update buffer
+        self.buffer[:-1] = self.buffer[1:]
+        self.buffer[-1] = observation
+
+        # Concatenate observations
+        stacked_observations = np.concatenate(self.buffer, axis=0)
+
         # Terminating conditions
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
         # Episode timeout
-        if self.env_step_count >= self.max_steps:
+        elif self.env_step_count >= self.max_steps:
             done = True
         else:
             done = False
@@ -277,6 +294,8 @@ class LeggedEnv(gym.Env):
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
         self.prev_joint_velocities = self.joint_velocities
+        self.prev_base_lin_vel_x = np.array(p.getBaseVelocity(self.robot)[0])
+        self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
         # else:
 
@@ -297,9 +316,8 @@ class LeggedEnv(gym.Env):
         #     self.t+=1/240
 
         #     done = False
-
     
-        return observation, reward, done, {}
+        return stacked_observations, reward, done, {}
         
     def xyz_obj_dist_to_goal(self):
 
@@ -309,7 +327,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [2, 0, 0]
+        box_pos = [2.5, 0, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -373,6 +391,13 @@ class LeggedEnv(gym.Env):
         # Get the observation
         observation = self.get_observation()
 
+        # Update buffer
+        self.buffer[:-1] = self.buffer[1:]
+        self.buffer[-1] = observation
+
+        # Concatenate observations
+        stacked_observations = np.concatenate(self.buffer, axis=0)
+
         # Terminating conditions
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
@@ -389,8 +414,13 @@ class LeggedEnv(gym.Env):
         reward = self.get_reward()
         self.reward += reward
         self.prev_dist = self.xyz_obj_dist_to_goal()
+
+        stridelen = self.calc_stride_length()
+
+        self.prev_base_lin_vel_x = np.array(p.getBaseVelocity(self.robot)[0])
+        self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
     
-        return observation, reward, done
+        return stacked_observations, reward, done
         
     def get_end_effector_pose(self):
         
@@ -406,11 +436,12 @@ class LeggedEnv(gym.Env):
         back_right_EE_pos = p.getLinkState(self.robot, 7)[0]
         back_right_EE_orn = p.getLinkState(self.robot, 7)[1]
 
-        legs_pos = np.array([front_left_EE_pos, front_right_EE_pos, 
-                             back_left_EE_pos, back_right_EE_pos])
+        legs_pos = [front_left_EE_pos, front_right_EE_pos, 
+                    back_left_EE_pos, back_right_EE_pos]
         
         legs_orn = np.array([front_left_EE_orn, front_right_EE_orn, 
                              back_left_EE_orn, back_right_EE_orn])
+
 
         return legs_pos, legs_orn
     
@@ -428,13 +459,37 @@ class LeggedEnv(gym.Env):
             if len(contact_points) > 0:
                 foot_contacts[i] = True
 
-        not_on_ground = all(element == False for element in foot_contacts)
 
+        not_on_ground = all(element == False for element in foot_contacts)
+        
         if not_on_ground:
             return True
         else:
             return False
 
+    def calc_stride_length(self):
+        contact_pos_list = []
+        contact_points = p.getContactPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=1)
+
+        if len(contact_points) > 0:
+            contact_pos = contact_points[0][5]
+            contact_pos_list.append(contact_pos)
+
+        if len(contact_points) == 0:
+            return None
+
+        curr_contact_pos = np.mean(contact_pos_list, axis=0)
+
+        if self.prev_contact_pos is not None:
+            self.stride_length = np.linalg.norm(curr_contact_pos - self.prev_contact_pos)
+
+        self.prev_contact_pos = curr_contact_pos
+
+        return self.stride_length
+
+        
     def get_observation(self):
         
         # Positions of all 8 joints
@@ -510,7 +565,7 @@ class LeggedEnv(gym.Env):
         # Convert robot's orientation to rotation matrix
         rotation_matrix = np.array(p.getMatrixFromQuaternion(self.base_orn))
         rotation_matrix = rotation_matrix.reshape(3,3)
-        
+
         # Create homogeneous rotation matrix
         T = np.eye(4)
         # transpose to convert from world frame to robot frame
@@ -525,6 +580,27 @@ class LeggedEnv(gym.Env):
         # Relative vector to goal (normalized)
         self.relative_goal_vect = relative_goal_pos / self.relative_goal_dist
 
+        leg_pos_robot_frame_norm = []
+        for leg_pos in self.robot_legs_EE_pos:
+            p_world = leg_pos - self.base_pos
+            p_robot = np.dot(rotation_matrix.T, p_world)
+            p_robot_dist = np.sqrt(np.dot(p_robot, p_robot))
+            p_robot_norm = p_robot / p_robot_dist
+            leg_pos_robot_frame_norm.append(p_robot_norm)
+        leg_pos_robot_frame_norm = np.array(leg_pos_robot_frame_norm)
+        leg_pos_robot_frame_norm = leg_pos_robot_frame_norm.flatten()
+
+        # Normal force for each foot upon contact
+        # foot_link_ids = [1, 3, 5, 7]
+
+        # for i, foot_id in enumerate(foot_link_ids):
+        #     contact_points = p.getContactPoints(bodyA=self.robot, 
+        #                                             bodyB=self.surface.plane_id, 
+        #                                             linkIndexA=foot_id)
+        #     if len(contact_points) == 1 and foot_id ==3:
+        #         print("normal_force", foot_id, contact_points[0][9])
+    
+                
         # print(f"Position{self.base_pos}")
         # print(f"Ornrpy{self.base_rpy}")
 
@@ -534,11 +610,10 @@ class LeggedEnv(gym.Env):
             *self.normalized_base_lin_vel,
             *self.normalized_base_ang_vel,
             *self.normalized_base_orn,
-            *self.normalized_rpy,
             np.array(self.relative_goal_dist, dtype=np.float64),
-            np.array(self.relative_goal_vect, dtype=np.float64)
+            np.array(self.relative_goal_vect, dtype=np.float64),
+            *leg_pos_robot_frame_norm
         ])
-
         # Additions to be made
         # CoG in robot frame
 
@@ -546,16 +621,30 @@ class LeggedEnv(gym.Env):
     
     def get_reward(self):
         # Goal reached
-        if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            self.goal_reward = 500
-        else:
-            self.goal_reward = 0
+        # if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+        #     self.goal_reward = 500
+        # else:
+        #     self.goal_reward = 0
+
         # Robot is moving towards goal - Position
-        if self.prev_dist > self.xyz_obj_dist_to_goal():
-            self.position_reward = 1.0 * self.xyz_obj_dist_to_goal()
+        # if self.prev_dist > self.xyz_obj_dist_to_goal():
+        self.position_reward = 0.75 * self.xyz_obj_dist_to_goal()
 
         # Robot is moving
-        self.move_reward = 2.0 * self.base_lin_vel[0]
+        self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel_x)
+
+        # Penalise work done
+        # Get the joint states for the current and next states
+        current_joint_states = p.getJointStates(self.robot, self.actuators)
+
+        # print("curr",current_joint_states)
+        # print("prev", self.prev_joint_states)
+        work_done = 0.0
+        for i, joint_state in enumerate(self.prev_joint_states):
+            joint_torque = joint_state[3]
+            joint_displacement = current_joint_states[i][0] - joint_state[0]
+            joint_work = joint_torque * joint_displacement
+            work_done += joint_work
 
         # print("pos_reward", self.position_reward)
         # print("movreward", self.move_reward)
@@ -583,7 +672,7 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = -(-self.goal_reward + self.position_reward)
+        reward = -(self.position_reward - self.move_reward + 0.001*work_done)
         return reward
     
     def process_and_cmd_vel(self):
