@@ -95,9 +95,14 @@ class LeggedEnv(gym.Env):
         self.spawn_robot()
         self.generate_goal()
         
+        self.continuous_action_space = True
+        if self.continuous_action_space:
+            self.action_space = gym.spaces.Box(
+            low=-1, high=1, shape=(8,), dtype=np.float64)
+        else:
         # Define action space
-        actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
-        self.action_space = MultiDiscrete(actions)
+            actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
+            self.action_space = MultiDiscrete(actions)
 
         # self.action_space = gym.spaces.Box(
         #     low=-10, high=10, shape=(8,), dtype=np.float64)
@@ -239,12 +244,13 @@ class LeggedEnv(gym.Env):
 
         self.cpg_first = False
         joint_velocities = []
-
-        # Find the actions based on pre-defined mappings
-        for joint, index in enumerate(action):
-            joint_velocity = self.joint_to_action_map[joint][index]
-            joint_velocities.append(joint_velocity)
-
+        if self.continuous_action_space:
+            # Find the actions based on pre-defined mappings
+            for joint, index in enumerate(action):
+                joint_velocity = self.joint_to_action_map[joint][index]
+                joint_velocities.append(joint_velocity)
+        else:
+            joint_velocities.append(action)
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
         current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
@@ -623,14 +629,14 @@ class LeggedEnv(gym.Env):
         ])
 
         # Update buffer
-        # self.obs_buffer[:-1] = self.obs_buffer[1:]
-        # self.obs_buffer[-1] = observation
+        self.obs_buffer[:-1] = self.obs_buffer[1:]
+        self.obs_buffer[-1] = observation
 
-        # # Concatenate observations
-        # stacked_observations = np.concatenate(self.obs_buffer, axis=0)
+        # Concatenate observations
+        stacked_observations = np.concatenate(self.obs_buffer, axis=0)
         # # Additions to be made
         # CoG in robot frame
-        return observation
+        return stacked_observations
     
     def get_reward(self):
         # Goal reached
@@ -688,7 +694,7 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = -(self.position_reward - self.move_reward + self.work_done_reward)
+        reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
         return reward
     
     def process_and_cmd_vel(self):
