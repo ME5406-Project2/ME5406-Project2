@@ -45,6 +45,7 @@ class LeggedEnv(gym.Env):
         self.reward = 0
         self.prev_base_lin_vel = 0
         self.work_done_reward = 0
+        self.prev_base_pos = 0
 
         self.prev_contact_pos = None
         self.stride_length = 0
@@ -299,6 +300,7 @@ class LeggedEnv(gym.Env):
         self.prev_joint_velocities = self.joint_velocities
         self.prev_base_lin_vel = p.getBaseVelocity(self.robot)[0][0]
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
+        self.prev_base_pos = p.getBasePositionAndOrientation(self.robot)[0][2]
 
         # else:
 
@@ -423,6 +425,7 @@ class LeggedEnv(gym.Env):
 
         self.prev_base_lin_vel = p.getBaseVelocity(self.robot)[0][0]
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
+        self.prev_base_pos = p.getBasePositionAndOrientation(self.robot)[0][2]
     
         return observation, reward, done
         
@@ -627,7 +630,6 @@ class LeggedEnv(gym.Env):
         # stacked_observations = np.concatenate(self.obs_buffer, axis=0)
         # # Additions to be made
         # CoG in robot frame
-        print(observation)
         return observation
     
     def get_reward(self):
@@ -642,14 +644,11 @@ class LeggedEnv(gym.Env):
         self.position_reward = 0.75 * self.xyz_obj_dist_to_goal()
 
         # Robot is moving
-        self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
-
+        # self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
+        self.move_reward = self.base_lin_vel[0]
         # Penalise work done
         # Get the joint states for the current and next states
         current_joint_states = p.getJointStates(self.robot, self.actuators)
-
-        # print("curr",current_joint_states)
-        # print("prev", self.prev_joint_states)
         work_done = 0.0
         for i, joint_state in enumerate(self.prev_joint_states):
             joint_torque = joint_state[3]
@@ -658,6 +657,10 @@ class LeggedEnv(gym.Env):
             work_done += joint_work
 
         self.work_done_reward = 0.0001*work_done
+
+        # Stability penalty
+        self.stability_reward = -0.1 * abs(self.base_pos[2] - self.prev_base_pos)
+
 
         # print("pos_reward", self.position_reward)
         # print("movreward", self.move_reward)
