@@ -60,23 +60,23 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
 
 # testing code
 if __name__ == "__main__":
-    
-    
-
-    #Validation("SAC", "./trained_models/limit_obs_test/limit_obs_test_1000000_steps.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/simpler_model_test/simpler_model_test_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test1/test1_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test1/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test2/test2_1000000_steps.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/test3/test3_1000000_steps.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/test4/test4_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test3/test3_2000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test4/test4_500000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test5/test5_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test5/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test6/test6_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test6/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test7/test7_1000000_steps.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/test8/test8_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test7/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test8/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test8/test8_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test9/test9_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test10/test10_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test11/test11_1000000_steps.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/test11/best_model/best_model.zip", eval_eps=1)
-    #Validation("SAC", "./trained_models/test12/best_model/best_model.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/test12/test12_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test12/test12_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test13/test13_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test14/best_model/best_model.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/test14/test14_1000000_steps.zip", eval_eps=1)

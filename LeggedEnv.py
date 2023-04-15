@@ -30,8 +30,8 @@ class LeggedEnv(gym.Env):
         self.obs = {}
 
         # Termination condition parameter
-        self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.termination_pos_dist = 0.5 #0.5
+        self.max_steps = 2000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -46,6 +46,9 @@ class LeggedEnv(gym.Env):
 
         # Initialize isdead
         self.is_dead = False
+
+        # Initialize previous actions
+        self.prev_actions = np.zeros(shape=(8,))
 
         # Define joint-to-action mapping
         self.joint_to_action_map = {
@@ -101,13 +104,16 @@ class LeggedEnv(gym.Env):
         # self.action_space = gym.spaces.Box(
         #     low=-10, high=10, shape=(8,), dtype=np.float64)
 
+        # robot weight
+        self.weight = self.compute_weight()
+        
         # Define observation spaces
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
             low=-1, high=1, shape=(obs_shape), dtype=np.float64)
         
         # time interval between each timesteps
-        self.timestep = 0.002
+        self.timestep = 0.004#0.004
         p.setTimeStep(self.timestep)
 
         # CPG timestep
@@ -234,6 +240,9 @@ class LeggedEnv(gym.Env):
         self.t = 0
         self.cpg_first = True
 
+        # Reset previous actions
+        self.prev_actions = np.zeros(shape=(8,))
+
         return self.get_observation()
     
     def step(self, action):
@@ -285,6 +294,10 @@ class LeggedEnv(gym.Env):
         # time.sleep(1/240)
         self.env_step_count += 1
         
+        # Update previous actions
+        # Convert actions back to range [-1,1]
+        self.prev_actions = self.revert_actions(action)
+
         # Get the observation
         observation = self.get_observation()
         
@@ -292,9 +305,11 @@ class LeggedEnv(gym.Env):
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
+            print("GOAL REACHED")
         elif(self.check_is_unrecoverable()):
             done = True
             self.is_dead=True
+            # print("Unrecoverable")
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
@@ -471,7 +486,7 @@ class LeggedEnv(gym.Env):
         # print(self.joint_positions)
         # relative joint angle in radians
         # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
-        self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
+        normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
 
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
@@ -479,11 +494,11 @@ class LeggedEnv(gym.Env):
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
         max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
-        self.normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float64)
+        normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float64)
 
         # Reaction forces of all 8 joints
-        self.joint_reaction_forces = np.array([p.getJointState(self.robot, self.actuators[i])[2] 
-                                       for i in range(self.num_of_joints)])
+        joint_reaction_forces = np.array([p.getJointState(self.robot, self.actuators[i])[2] 
+                                    for i in range(self.num_of_joints)])
         
         # NOTE f_max not defined in URDF (might be useful for slippage stuff?)
         # f_max = p.getJointInfo()[10]
@@ -492,8 +507,8 @@ class LeggedEnv(gym.Env):
         # self.normalized_joint_reaction_forces = np.divide(self.joint_reaction_forces, max_reaction_force)
 
         # Linear and Angular velocity of the robot
-        self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
-        self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
+        base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
+        base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
         # print("baselinvel",self.base_lin_vel)
 
         # normalize linear and angular velocities [] -> [-1,1]
@@ -504,8 +519,8 @@ class LeggedEnv(gym.Env):
         # lin_vel_max = pi*0.575 (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
         # ang_vel_max = 0.575*2pi / 0.565 ~= 2pi 
         base_lin_vel_limit, base_ang_vel_limit = 0.575*np.pi , 2*np.pi
-        self.normalized_base_lin_vel = np.array(self.base_lin_vel / base_lin_vel_limit, dtype=np.float64)
-        self.normalized_base_ang_vel = np.array(self.base_ang_vel / base_ang_vel_limit, dtype=np.float64)
+        self.normalized_base_lin_vel = np.array(base_lin_vel / base_lin_vel_limit, dtype=np.float64)
+        normalized_base_ang_vel = np.array(base_ang_vel / base_ang_vel_limit, dtype=np.float64)
 
         # Robot Position
         self.base_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
@@ -518,13 +533,13 @@ class LeggedEnv(gym.Env):
 
         # normalize orientation to [-1,1] by dividing by norm
         base_orn_length = np.sqrt(np.dot(self.base_orn, self.base_orn))
-        self.normalized_base_orn = np.array(self.base_orn / base_orn_length, dtype=np.float64)
+        normalized_base_orn = np.array(self.base_orn / base_orn_length, dtype=np.float64)
 
         # Robot Orientation (Euler Angles)
         self.base_rpy = np.array(p.getEulerFromQuaternion(self.base_orn))
 
         # normalize orientation (Euler Angles) [-pi, pi] -> [-1,1]
-        self.normalized_rpy = np.array(self.base_rpy / np.pi, dtype=np.float64)
+        normalized_rpy = np.array(self.base_rpy / np.pi, dtype=np.float64)
 
         # Robot end-effector position
         self.robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
@@ -536,7 +551,7 @@ class LeggedEnv(gym.Env):
         self.goal_pos = np.array(p.getBasePositionAndOrientation(self.goal_id)[0])
 
         # Goal orientation
-        self.goal_orn = np.array(p.getBasePositionAndOrientation(self.goal_id)[1])
+        goal_orn = np.array(p.getBasePositionAndOrientation(self.goal_id)[1])
 
         # Convert robot's orientation to rotation matrix
         rotation_matrix = np.array(p.getMatrixFromQuaternion(self.base_orn))
@@ -556,25 +571,54 @@ class LeggedEnv(gym.Env):
         # Normalized distance to goal (initial distance to goal)
         self.normalized_goal_dist = relative_goal_dist / np.sqrt(np.dot(self.goal_pos, self.goal_pos))
         # Relative vector to goal (normalized)
-        self.relative_goal_vect = relative_goal_pos / relative_goal_dist
+        relative_goal_vect = relative_goal_pos / relative_goal_dist
+
+        # Compute Center of Mass of Robot
+        normalized_center_of_mass = self.compute_center_of_mass()
 
         # print(f"Position{self.base_pos}")
         # print(f"Ornrpy{self.base_rpy}")
 
+        # Get contact forces and frictional forces
+        contact_forces = []
+        frictional_forces = []
+        # Link IDs of the end-effectors
+        # Respectively: FL, FR, BL, BR
+        foot_link_ids = [1, 3, 5, 7]
+        
+        # divide the weight of robot into 4 legs
+        average_force = self.weight / 4
+        for i, foot_id in enumerate(foot_link_ids):
+            contact_points = p.getContactPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=foot_id)
+            if (len(contact_points) == 0):
+                # contact_forces.append(0)
+                # frictional_forces.append(0)
+                contact_forces.append(np.array([0, 0, 0]))
+            else:
+                # contact_forces.append((contact_points[9] - average_force)/(average_force))
+                # frictional_forces.append(contact_points[10])
+                normal_forces = contact_points[0][7]
+                normal_forces /= np.linalg.norm(normal_forces)
+                contact_forces.append(np.array(normal_forces))
+        # flatten contact forces
+        contact_forces = np.concatenate(contact_forces)
+        
         observation = np.hstack([
-            *self.normalized_joint_angles,
-            *self.normalized_joint_velocities,
-            *self.normalized_base_lin_vel,
-            *self.normalized_base_ang_vel,
-            *self.normalized_base_orn,
-            np.array(self.normalized_base_height),
-            *self.normalized_rpy,
+            #*self.prev_actions,
+            *normalized_center_of_mass, #in paper
+            *normalized_base_orn, #in paper
+            *normalized_joint_velocities, #in paper
+            # *normalized_joint_angles,
+            *self.normalized_base_lin_vel, #in paper
+            *normalized_base_ang_vel, #in paper
+            # np.array(self.normalized_base_height),
+            contact_forces,
+            *normalized_rpy,
             np.array(self.normalized_goal_dist, dtype=np.float64),
-            np.array(self.relative_goal_vect, dtype=np.float64)
+            np.array(relative_goal_vect, dtype=np.float64)
         ])
-
-        # Additions to be made
-        # CoG in robot frame
 
         return observation
     
@@ -585,19 +629,23 @@ class LeggedEnv(gym.Env):
         else:
             self.goal_reward = 0
         # Robot is moving towards goal - Position
-        self.position_reward = 10.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3)
-        self.position_reward = max(self.position_reward, 0)
-        
+        # self.position_reward = 2.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
+        # Reward increases as robot approaches goal
+        self.position_reward = 0.01 / 2**self.normalized_goal_dist
         # Robot is moving
-        self.move_reward = 1*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
-
+        self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
+        self.move_reward = min(self.move_reward, 0.2)
+        # self.move_reward = max(1, self.move_reward)
         # time step penalty
-        time_step_penalty = -0.005
+        # time_step_penalty = -0.005
+
+        # alive reward
+        alive_reward = 0.005
 
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
         if self.is_dead:
-            dead_penalty = -500
+            dead_penalty = -10 #-500
         # print("pos_reward", self.position_reward)
         # print("movreward", self.move_reward)
 
@@ -613,11 +661,12 @@ class LeggedEnv(gym.Env):
         roll = self.base_rpy[0]
         pitch = self.base_rpy[1]
         z_pos = self.base_pos[2]
-        if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
-            self.stability_reward = 1 #0.1
+        # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
+        #     self.stability_reward = 1 #0.1
 
         # penalize for too much tilting forward or backwards
-        pitch_reward = -10 * pitch**2
+        pitch_penalty = -5 * pitch**2
+        roll_penalty = -5 * roll**2
 
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
@@ -626,8 +675,16 @@ class LeggedEnv(gym.Env):
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
+        # print("roll penalty:", roll_penalty)
+        # print("pitch penalty:", pitch_penalty)
+        # print("alive_reward:", alive_reward)
+        # print("move_reward:", self.move_reward)
+        # print("position_reward:", self.position_reward)
+        # print("self.goal_reward:", self.goal_reward)
+        
         # Sum of all rewards
-        reward = (self.goal_reward + self.position_reward + time_step_penalty + dead_penalty + self.move_reward)
+        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.move_reward + self.position_reward)
+        # print("total reward:", reward)
         return reward
     
     def process_and_cmd_vel(self):
@@ -645,11 +702,21 @@ class LeggedEnv(gym.Env):
             p.stepSimulation()
             joint_pos_arr.clear()
     
+    def revert_actions(self, actions):
+        original_actions = []
+        # convert discrete actions back into values in range [-1,1]
+        for index in range(len(self.joint_to_action_map)):
+            num_actions = len(self.joint_to_action_map[index])
+            # only able to recover original actions up to nearest 2/num_actions
+            act = actions[index]*(2/num_actions)-1
+            original_actions.append(act)
+        return np.array(original_actions)
+
     def check_is_unrecoverable(self):
         closest_points = p.getClosestPoints(bodyA=self.robot, 
                                                 bodyB=self.surface.plane_id, 
                                                 linkIndexA=-1,
-                                                distance=0.15)
+                                                distance=0.10)
         contact_points = p.getContactPoints(bodyA=self.robot, bodyB=self.surface.plane_id, linkIndexA=-1)
 
         roll = self.base_rpy[0]
@@ -657,53 +724,91 @@ class LeggedEnv(gym.Env):
         
         is_unrecoverable = False
         # Height of torso is too low (less than 0.2 of original height)
-        if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
-            is_unrecoverable = True
+        # if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
+        #     is_unrecoverable = True
+        #     print("height too low")
         # Torso of robot touches ground
         if (len(contact_points) > 0):
             is_unrecoverable = True
+            # print("touch ground")
         # Torso of robot is very close to ground
         if (len(closest_points) > 0):
             is_unrecoverable = True
+            # print("too close to ground")
         # Pitch and Roll is too large
         if (abs(pitch) > math.radians(40) or abs(roll) > math.radians(40)):
             is_unrecoverable = True
         return is_unrecoverable
              
-    def test_step(self, joint_num):
-        joint_velocities = []
-        
-        timestep = 0.1
+    def compute_center_of_mass(self):
+        # Get the robot's world transform
+        robot_world_transform = p.getBasePositionAndOrientation(self.robot)
 
-        p.setTimeStep(timestep)
+        # Initialize variables for center of mass position and total mass
+        center_of_mass_position = [0, 0, 0]
+        total_mass = 0
 
-        joint_vel = 10
+        # Add the contribution of the base link's mass
+        base_link_info = p.getDynamicsInfo(self.robot, -1)  # Get dynamics info of base link (-1)
+        base_link_mass = base_link_info[0]
+        total_mass += base_link_mass
 
-        # Check if joint limits exceeded
-        commanded_joint_positions = 0
-        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                    for i in range(1)])
-        change_in_joint_pos = joint_vel * timestep
-        
-        commanded_joint_positions = current_joint_positions + change_in_joint_pos
-        
-        # Joint limits actually exceeded
-        if commanded_joint_positions < -math.radians(90):
-            commanded_joint_positions= -math.radians(90)
-        elif commanded_joint_positions > math.radians(90):
-            commanded_joint_positions = math.radians(90)
-        
-        print("commanded_joint_positions", commanded_joint_positions)
-        curr_joint_pose = p.getJointState(self.robot, self.actuators[joint_num])[0]
-        print("current joint pose", curr_joint_pose)
-        # Send action velocities to robot joints
+        # Iterate through each link in the robot
+        for link_idx in range(self.num_of_joints):
+            # Get the link's info
+            link_info = p.getLinkState(self.robot, link_idx, computeLinkVelocity=0)
 
-        p.setJointMotorControl2(self.robot, joint_num,
-                               p.POSITION_CONTROL, targetPosition=commanded_joint_positions,
-                               positionGain = 0.1, velocityGain = 0, force = 100)
-        # Step the simulation
-        p.stepSimulation()
-        print("pose diff", p.getJointState(self.robot, self.actuators[1])[0] - curr_joint_pose)
+            # Get the link's URDF data
+            link_urdf_data = p.getDynamicsInfo(self.robot, link_idx)
+
+            # Get the link's mass
+            link_mass = link_urdf_data[0]
+
+            # Get the link's local position of the center of mass
+            link_local_com_position = link_info[2]
+
+            # Compute the link's world transform by multiplying the link's local transform with the robot's world transform
+            link_world_transform = p.multiplyTransforms(robot_world_transform[0], robot_world_transform[1], link_local_com_position, [0, 0, 0, 1])
+
+            # Compute the link's center of mass position in the world frame by multiplying the link's mass with the link's world transform
+            link_com_position = [link_mass * link_world_transform[0][0], link_mass * link_world_transform[0][1], link_mass * link_world_transform[0][2]]
+
+            # Update the total mass
+            total_mass += link_mass
+
+            # Update the center of mass position
+            center_of_mass_position[0] += link_com_position[0]
+            center_of_mass_position[1] += link_com_position[1]
+            center_of_mass_position[2] += link_com_position[2]
+
+        # Divide the center of mass position by the total mass to get the weighted average
+        center_of_mass_position[0] /= total_mass
+        center_of_mass_position[1] /= total_mass
+        center_of_mass_position[2] /= total_mass
+
+        # Transform the center of mass position from the world frame to the robot frame using the inverse of the robot's world transform
+        robot_world_transform_inv = p.invertTransform(robot_world_transform[0], robot_world_transform[1])
+        center_of_mass_position_robot_frame = p.multiplyTransforms(robot_world_transform_inv[0], robot_world_transform_inv[1], center_of_mass_position, [0, 0, 0, 1])
+
+        # print("Center of Mass Position in Robot Frame: ", center_of_mass_position_robot_frame[0])
+        normalized_center_of_mass = np.array(center_of_mass_position_robot_frame[0]) / np.linalg.norm(center_of_mass_position_robot_frame[0])
+        # print(normalized_center_of_mass)
+        return normalized_center_of_mass
+
+    def compute_weight(self):
+        total_mass = 0
+        base_link_info = p.getDynamicsInfo(self.robot, -1)  # Get dynamics info of base link (-1)
+        base_link_mass = base_link_info[0]
+        total_mass += base_link_mass
+        # Iterate through each link in the robot
+        for link_idx in range(self.num_of_joints):
+            # Get the link's URDF data
+            link_urdf_data = p.getDynamicsInfo(self.robot, link_idx)
+
+            # Get the link's mass
+            link_mass = link_urdf_data[0]
+            total_mass += link_mass
+        return total_mass*9.81
 
     def test(self):
         # Robot Position
@@ -722,7 +827,7 @@ class LeggedEnv(gym.Env):
                                                 bodyB=self.surface.plane_id, 
                                                 linkIndexA=-1,
                                                 distance=0.3)
-        print(len(closest_points))
+        # print(len(closest_points))
         # print("total reward",self.get_reward())
         # print("dist rwd", self.position_reward)
         # self.prev_dist = self.xyz_obj_dist_to_goal()
@@ -737,6 +842,8 @@ class LeggedEnv(gym.Env):
         #print(self.normalized_base_orn)
         # Step the simulation
         p.stepSimulation()
+        # print(env.get_observation())
+        self.get_reward()
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
@@ -745,7 +852,8 @@ if __name__ == "__main__":
     t = 0
     
     # env.test_step(joint_num=6)
-
+    #env.compute_center_of_mass()
+    #env.get_reward()
     while (True):
         env.test()
         
