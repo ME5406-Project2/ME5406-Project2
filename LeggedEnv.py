@@ -31,7 +31,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.max_steps = 5000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -104,11 +104,11 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         # obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(168,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=(30,), dtype=np.float64)
         
         # Buffer for history stacking of observations
         self.buffer_size = 4
-        self.obs_buffer = np.zeros((self.buffer_size, 42))
+        self.obs_buffer = np.zeros((self.buffer_size, 30))
         
         # CPG timestep
         self.t = 0
@@ -243,7 +243,7 @@ class LeggedEnv(gym.Env):
         for joint, index in enumerate(action):
             joint_velocity = self.joint_to_action_map[joint][index]
             joint_velocities.append(joint_velocity)
-        
+
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
         current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
@@ -608,6 +608,7 @@ class LeggedEnv(gym.Env):
         # print(f"Position{self.base_pos}")
         # print(f"Ornrpy{self.base_rpy}")
 
+        # Normalised observations
         observation = np.hstack([
             *self.normalized_joint_angles,
             *self.normalized_joint_velocities,
@@ -615,20 +616,19 @@ class LeggedEnv(gym.Env):
             *self.normalized_base_ang_vel,
             *self.normalized_base_orn,
             np.array(self.relative_goal_dist, dtype=np.float64),
-            np.array(self.relative_goal_vect, dtype=np.float64),
-            *leg_pos_robot_frame_norm
+            np.array(self.relative_goal_vect, dtype=np.float64)
         ])
 
         # Update buffer
-        self.obs_buffer[:-1] = self.obs_buffer[1:]
-        self.obs_buffer[-1] = observation
+        # self.obs_buffer[:-1] = self.obs_buffer[1:]
+        # self.obs_buffer[-1] = observation
 
-        # Concatenate observations
-        stacked_observations = np.concatenate(self.obs_buffer, axis=0)
-        # Additions to be made
+        # # Concatenate observations
+        # stacked_observations = np.concatenate(self.obs_buffer, axis=0)
+        # # Additions to be made
         # CoG in robot frame
-
-        return stacked_observations
+        print(observation)
+        return observation
     
     def get_reward(self):
         # Goal reached
