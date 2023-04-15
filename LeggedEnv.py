@@ -284,10 +284,16 @@ class LeggedEnv(gym.Env):
         #                             p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
         
         # CPG-style position control
+        joint_positions = []
+        # Find the actions based on pre-defined mappings
+        for joint, index in enumerate(action):
+            joint_velocity = self.joint_to_action_map[joint][index]
+            joint_positions.append(joint_velocity)
+        print(joint_positions)
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=-np.array(action))
+                                    p.POSITION_CONTROL, targetPositions=-np.array(joint_positions))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=action)
+                                    p.POSITION_CONTROL, targetPositions=joint_positions)
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
@@ -722,7 +728,6 @@ class LeggedEnv(gym.Env):
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
         reward = -(self.position_reward - self.move_reward - self.time_reward)
-        print(reward)
         return reward
     
     def process_and_cmd_vel(self):
