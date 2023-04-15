@@ -98,9 +98,9 @@ class LeggedEnv(gym.Env):
         self.continuous_action_space = True
         if self.continuous_action_space:
             self.action_space = gym.spaces.Box(
-            low=-1, high=1, shape=(8,), dtype=np.float64)
+            low=-50.0, high=50.0, shape=(8,), dtype=np.float32)
         else:
-        # Define action space
+            # Define action space
             actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
             self.action_space = MultiDiscrete(actions)
 
@@ -110,7 +110,7 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         # obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(30,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=(120,), dtype=np.float32)
         
         # Buffer for history stacking of observations
         self.buffer_size = 4
@@ -244,18 +244,17 @@ class LeggedEnv(gym.Env):
 
         self.cpg_first = False
         joint_velocities = []
-        if self.continuous_action_space:
+        if not self.continuous_action_space:
             # Find the actions based on pre-defined mappings
             for joint, index in enumerate(action):
                 joint_velocity = self.joint_to_action_map[joint][index]
                 joint_velocities.append(joint_velocity)
         else:
-            joint_velocities.append(action)
+            joint_velocities = list(action)
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
         current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                     for i in range(self.num_of_joints)])
-        
         for index in range(self.num_of_joints):
             change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
             commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
