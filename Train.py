@@ -10,7 +10,7 @@ from CustomNetwork import (Custom_DDPG_Policy, Custom_PPO_Policy,
 from gym.spaces import MultiDiscrete
 from stable_baselines3.common.callbacks import CallbackList, EvalCallback, CheckpointCallback, StopTrainingOnNoModelImprovement
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecMonitor
 
@@ -54,10 +54,13 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     :param save_freq: frequency to save model
     """
     if (num_vectorized_env>1):
+        # env = make_vec_env(env_id=LeggedEnv,
+        #                    n_envs=num_vectorized_env,
+        #                    vec_env_cls=SubprocVecEnv,
+        #                    wrapper_class=DiscreteActionWrapper)
         env = make_vec_env(env_id=LeggedEnv,
                            n_envs=num_vectorized_env,
-                           vec_env_cls=SubprocVecEnv,
-                           wrapper_class=DiscreteActionWrapper)
+                           vec_env_cls=SubprocVecEnv)
     else:
         # to use dummy env or actual env
         if use_dummy:
@@ -229,10 +232,13 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         eval_env = Monitor(eval_env)
     else:
         #eval_env = make_env()
+        # eval_env = make_vec_env(env_id=LeggedEnv,
+        #                    n_envs=5,
+        #                    vec_env_cls=SubprocVecEnv,
+        #                    wrapper_class=DiscreteActionWrapper)
         eval_env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=5,
-                           vec_env_cls=SubprocVecEnv,
-                           wrapper_class=DiscreteActionWrapper)
+                           n_envs=10,
+                           vec_env_cls=SubprocVecEnv)
     
 
     # callback for regular evaluation and save best model
@@ -264,6 +270,7 @@ def make_dummy_env():
 def make_env(use_gui=False):
     env = LeggedEnv(use_gui=use_gui)
     # discretize actions using wrapper
+    # env = VecFrameStack(env, n_stack=4)
     env = DiscreteActionWrapper(env)
     return env
 
@@ -296,4 +303,5 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("SAC", num_timesteps=1e6, training_name='training6')
+    Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
+    #training11or12
