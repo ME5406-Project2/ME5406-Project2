@@ -61,24 +61,41 @@ class LeggedEnv(gym.Env):
         #     6: np.array([-10, -5, 0, 5, 10]),
         #     7: np.array([-10, -5, 0, 5, 10]),
         # }
+        # self.joint_to_action_map = {
+        #     0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     1: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     2: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     3: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     4: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     5: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     6: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        #     7: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
+        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
+        # }         
+        # self.joint_to_action_map = {
+        #     0: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     1: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     2: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     3: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     4: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     5: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     6: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        # }
+
         self.joint_to_action_map = {
-            0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            1: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            2: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            3: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            4: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            5: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            6: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-            7: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-                         5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        }         
+            0: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+            1: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+            2: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+            3: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
+        }
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
         planeId = p.loadURDF("plane.urdf")
@@ -95,7 +112,8 @@ class LeggedEnv(gym.Env):
         self.spawn_robot()
         self.generate_goal()
         
-        self.continuous_action_space = True
+        self.continuous_action_space = False
+
         if self.continuous_action_space:
             self.action_space = gym.spaces.Box(
             low=-50.0, high=50.0, shape=(8,), dtype=np.float32)
@@ -241,35 +259,40 @@ class LeggedEnv(gym.Env):
     def step(self, action):
 
         # if self.env_step_count > 200:
-
-        self.cpg_first = False
-        joint_velocities = []
-        if not self.continuous_action_space:
-            # Find the actions based on pre-defined mappings
-            for joint, index in enumerate(action):
-                joint_velocity = self.joint_to_action_map[joint][index]
-                joint_velocities.append(joint_velocity)
-        else:
-            joint_velocities = list(action)
-        # Check if joint limits exceeded
-        commanded_joint_positions = [0] * self.num_of_joints
-        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                    for i in range(self.num_of_joints)])
-        for index in range(self.num_of_joints):
-            change_in_joint_pos = joint_velocities[index] * (1 / 240.0)
-            commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
-        # # Joint limits actually exceeded
-        # for index, joint_pos in enumerate(commanded_joint_positions):
-        #     if joint_pos < -1.57 or joint_pos > 1.57:
-        #         joint_velocities = self.prev_joint_velocities
-        p.setJointMotorControlArray(self.robot, self.actuators,
-                                    p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
-
+        # self.cpg_first = False
+        # joint_velocities = []
+        # if not self.continuous_action_space:
+        #     # Find the actions based on pre-defined mappings
+        #     for joint, index in enumerate(action):
+        #         joint_velocity = self.joint_to_action_map[joint][index]
+        #         joint_velocities.append(joint_velocity)
+        # else:
+        #     joint_velocities = list(action)
+        # # Check if joint limits exceeded
+        # commanded_joint_positions = [0] * self.num_of_joints
+        # current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
+        #                             for i in range(self.num_of_joints)])
+        # for index in range(self.num_of_joints):
+        #     change_in_joint_pos = joint_velocities[index] * (1 / 240)
+        #     commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
+        # # # Joint limits actually exceeded
+        # # for index, joint_pos in enumerate(commanded_joint_positions):
+        # #     if joint_pos < -1.57 or joint_pos > 1.57:
+        # #         joint_velocities = self.prev_joint_velocities
+        
+        # p.setJointMotorControlArray(self.robot, self.actuators,
+        #                             p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
+        
+        # CPG-style position control
+        p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
+                                    p.POSITION_CONTROL, targetPositions=-np.array(action))
+        p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
+                                    p.POSITION_CONTROL, targetPositions=action)
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
         
-        self.store_joint_vel.append(joint_velocities)
+        # self.store_joint_vel.append(joint_velocities)
         
         # Step the simulation
         p.stepSimulation()
@@ -471,7 +494,6 @@ class LeggedEnv(gym.Env):
             if len(contact_points) > 0:
                 foot_contacts[i] = True
 
-
         not_on_ground = all(element == False for element in foot_contacts)
         
         if not_on_ground:
@@ -650,21 +672,26 @@ class LeggedEnv(gym.Env):
 
         # Robot is moving
         # self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
-        self.move_reward = self.base_lin_vel[0]
+        self.move_reward = 1.0 * self.normalized_base_lin_vel[0]
+        self.move_reward = min(self.move_reward, 0.2)
         # Penalise work done
         # Get the joint states for the current and next states
-        current_joint_states = p.getJointStates(self.robot, self.actuators)
-        work_done = 0.0
-        for i, joint_state in enumerate(self.prev_joint_states):
-            joint_torque = joint_state[3]
-            joint_displacement = current_joint_states[i][0] - joint_state[0]
-            joint_work = joint_torque * joint_displacement
-            work_done += joint_work
+        # current_joint_states = p.getJointStates(self.robot, self.actuators)
+        # work_done = 0.0
+        # for i, joint_state in enumerate(self.prev_joint_states):
+        #     joint_torque = joint_state[3]
+        #     joint_displacement = current_joint_states[i][0] - joint_state[0]
+        #     joint_work = joint_torque * joint_displacement
+        #     work_done += joint_work
 
-        self.work_done_reward = 0.0001*work_done
+        # self.work_done_reward = 0.0001*work_done
+
+        # Time penalty
+        self.time_reward = -0.01
+
 
         # Stability penalty
-        self.stability_reward = -0.1 * abs(self.base_pos[2] - self.prev_base_pos)
+        # self.stability_reward = -0.1 * abs(self.base_pos[2] - self.prev_base_pos)
 
 
         # print("pos_reward", self.position_reward)
@@ -693,7 +720,9 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
 
         # Sum of all rewards
-        reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
+        # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
+        reward = -(self.position_reward - self.move_reward - self.time_reward)
+        print(reward)
         return reward
     
     def process_and_cmd_vel(self):
