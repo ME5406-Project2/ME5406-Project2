@@ -118,19 +118,18 @@ class LeggedEnv(gym.Env):
 
         if self.continuous_action_space:
             self.action_space = gym.spaces.Box(
-            low=-50.0, high=50.0, shape=(8,), dtype=np.float32)
+            low=-50.0, high=50.0, shape=(8,), dtype=np.float64)
         else:
             # Define action space
             actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
             self.action_space = MultiDiscrete(actions)
-
         # self.action_space = gym.spaces.Box(
         #     low=-10, high=10, shape=(8,), dtype=np.float64)
 
         # Define observation spaces
         # obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(120,), dtype=np.float32)
+            low=-np.inf, high=np.inf, shape=(120,), dtype=np.float64)
         
         # Buffer for history stacking of observations
         self.buffer_size = 4
@@ -325,7 +324,7 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             done = True
-        elif(self.check_is_unrecoverable()):
+        elif self.check_is_unrecoverable():
             done = True
             self.is_dead = True
         # Episode timeout
@@ -548,7 +547,7 @@ class LeggedEnv(gym.Env):
         # print(self.joint_positions)
         # relative joint angle in radians
         # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
-        self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float32)
+        self.normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
 
         # Velocities of all 8 joints
         self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
@@ -556,7 +555,7 @@ class LeggedEnv(gym.Env):
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
         max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
-        self.normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float32)
+        self.normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float64)
 
         # Reaction forces of all 8 joints
         self.joint_reaction_forces = np.array([p.getJointState(self.robot, self.actuators[i])[2] 
@@ -581,8 +580,8 @@ class LeggedEnv(gym.Env):
         # lin_vel_max = pi*0.575 (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
         # ang_vel_max = 0.575*2pi / 0.565 ~= 2pi 
         base_lin_vel_limit, base_ang_vel_limit = 0.575*np.pi , 2*np.pi
-        self.normalized_base_lin_vel = np.array(self.base_lin_vel / base_lin_vel_limit, dtype=np.float32)
-        self.normalized_base_ang_vel = np.array(self.base_ang_vel / base_ang_vel_limit, dtype=np.float32)
+        self.normalized_base_lin_vel = np.array(self.base_lin_vel / base_lin_vel_limit, dtype=np.float64)
+        self.normalized_base_ang_vel = np.array(self.base_ang_vel / base_ang_vel_limit, dtype=np.float64)
 
         # Robot Position
         self.base_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
@@ -592,13 +591,13 @@ class LeggedEnv(gym.Env):
 
         # normalize orientation to [-1,1] by dividing by norm
         base_orn_length = np.sqrt(np.dot(self.base_orn, self.base_orn))
-        self.normalized_base_orn = np.array(self.base_orn / base_orn_length, dtype=np.float32)
+        self.normalized_base_orn = np.array(self.base_orn / base_orn_length, dtype=np.float64)
 
         # Robot Orientation (Euler Angles)
         self.base_rpy = np.array(p.getEulerFromQuaternion(self.base_orn))
 
         # normalize orientation (Euler Angles) [-pi, pi] -> [-1,1]
-        self.normalized_rpy = np.array(self.base_rpy / np.pi, dtype=np.float32)
+        self.normalized_rpy = np.array(self.base_rpy / np.pi, dtype=np.float64)
 
         # Robot end-effector position
         self.robot_legs_EE_pos = np.array(self.get_end_effector_pose()[0])
@@ -661,8 +660,8 @@ class LeggedEnv(gym.Env):
             *self.normalized_base_lin_vel,
             *self.normalized_base_ang_vel,
             *self.normalized_base_orn,
-            np.array(self.relative_goal_dist, dtype=np.float32),
-            np.array(self.relative_goal_vect, dtype=np.float32)
+            np.array(self.relative_goal_dist, dtype=np.float64),
+            np.array(self.relative_goal_vect, dtype=np.float64)
         ])
         # Update buffer
         self.obs_buffer[:-1] = self.obs_buffer[1:]
