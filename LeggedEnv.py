@@ -762,6 +762,35 @@ class LeggedEnv(gym.Env):
             joint_pos_arr.clear()
 
 
+    def check_is_unrecoverable(self):
+        closest_points = p.getClosestPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=-1,
+                                                distance=0.10)
+        contact_points = p.getContactPoints(bodyA=self.robot, bodyB=self.surface.plane_id, linkIndexA=-1)
+
+        roll = self.base_rpy[0]
+        pitch = self.base_rpy[1]
+        
+        is_unrecoverable = False
+        # Height of torso is too low (less than 0.2 of original height)
+        # if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
+        #     is_unrecoverable = True
+        #     print("height too low")
+        # Torso of robot touches ground
+        if (len(contact_points) > 0):
+            is_unrecoverable = True
+            # print("touch ground")
+        # Torso of robot is very close to ground
+        if (len(closest_points) > 0):
+            is_unrecoverable = True
+            # print("too close to ground")
+        # Pitch and Roll is too large
+        if (abs(pitch) > math.radians(40) or abs(roll) > math.radians(40)):
+            is_unrecoverable = True
+        return is_unrecoverable
+
+
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
     env.reset()
