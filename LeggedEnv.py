@@ -95,8 +95,8 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([-0.30, -0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
-            1: np.array([-0.30, -0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
+            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
+            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
         }
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -284,20 +284,22 @@ class LeggedEnv(gym.Env):
         
         # p.setJointMotorControlArray(self.robot, self.actuators,
         #                             p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
-        
         # CPG-style position control
         joint_positions = []
         # Find the actions based on pre-defined mappings
         for joint, index in enumerate(action):
             joint_pos = self.joint_to_action_map[joint][index]
             joint_positions.append(joint_pos)
+        cmd_joint_pos = []
+        cmd_joint_pos.extend(joint_positions)
         for joint_pos in joint_positions:
-            joint_positions.append(-1*joint_pos)
-        
+            negate_joint_pos = joint_pos * -1.0
+            cmd_joint_pos.append(negate_joint_pos)
+            
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=-np.array(joint_positions))
+                                    p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=joint_positions)
+                                    p.POSITION_CONTROL, targetPositions=cmd_joint_pos)
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
@@ -311,7 +313,6 @@ class LeggedEnv(gym.Env):
         
         # Get the observation
         observation = self.get_observation()
-
         # # Update buffer
         # self.buffer[:-1] = self.buffer[1:]
         # self.buffer[-1] = observation
