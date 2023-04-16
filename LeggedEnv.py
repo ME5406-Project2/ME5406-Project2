@@ -55,12 +55,20 @@ class LeggedEnv(gym.Env):
              0: np.array([-10, -5, 0, 5, 10]),
              1: np.array([-10, -5, 0, 5, 10]),
              2: np.array([-10, -5, 0, 5, 10]),
+             3: np.array([-10, -5, 0, 5, 10])
+        }
+        """
+        self.joint_to_action_map = {
+             0: np.array([-10, -5, 0, 5, 10]),
+             1: np.array([-10, -5, 0, 5, 10]),
+             2: np.array([-10, -5, 0, 5, 10]),
              3: np.array([-10, -5, 0, 5, 10]),
              4: np.array([-10, -5, 0, 5, 10]),
              5: np.array([-10, -5, 0, 5, 10]),
              6: np.array([-10, -5, 0, 5, 10]),
              7: np.array([-10, -5, 0, 5, 10]),
         }
+        """
         """
         self.joint_to_action_map = {
             0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
@@ -249,11 +257,26 @@ class LeggedEnv(gym.Env):
         self.cpg_first = False
         joint_velocities = []
 
+        """
+        0, #front left upper
+        1, #front left lower
+        2, #front right upper
+        3, #front right lower
+        4, #back left upper
+        5, #back left lower
+        6, #back right upper
+        7  #back right lower
+        """
         # Find the actions based on pre-defined mappings
         for joint, index in enumerate(action):
             joint_velocity = self.joint_to_action_map[joint][index]
             joint_velocities.append(joint_velocity)
         
+        # Append the same action to the diagonal back legs
+        joint_velocities.append(joint_velocities[2]) # apply front right upper actions to back left upper
+        joint_velocities.append(joint_velocities[3]) # apply front right lower actions to back left lower
+        joint_velocities.append(joint_velocities[0]) # apply front left upper actions to back right upper
+        joint_velocities.append(joint_velocities[1]) # apply front left lower actions to back right lower
 
         # Check if joint limits exceeded
         commanded_joint_positions = [0] * self.num_of_joints
@@ -649,18 +672,18 @@ class LeggedEnv(gym.Env):
         else:
             self.goal_reward = 0
         # Robot is moving towards goal - Position
-        # self.position_reward = 2.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
+        self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
         # Reward increases as robot approaches goal
-        self.position_reward = 0.01 / 2**self.normalized_goal_dist
+        # self.position_reward = 0.01 / 2**self.normalized_goal_dist
         # Robot is moving
         self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
-        # self.move_reward = min(self.move_reward, 0.1)
+        self.move_reward = min(self.move_reward, 0.1)
         # self.move_reward = max(1, self.move_reward)
         # time step penalty
         # time_step_penalty = -0.005
 
         # alive reward
-        alive_reward = 0.1 #0.005
+        alive_reward = 0.05
 
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
@@ -684,16 +707,47 @@ class LeggedEnv(gym.Env):
         # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
         #     self.stability_reward = 1 #0.1
 
-        # penalize for too much tilting forward or backwards
+        # penalize for too much tilting forward or backwards or sideways
         pitch_penalty = 0
         roll_penalty = 0
         #if abs(pitch) > math.radians(0):
-        pitch_penalty = -15 * pitch**2
+        pitch_penalty = -5 * pitch**2
         if abs(roll) > math.radians(5):
             roll_penalty = -5 * roll**2
         
+        # reward for diagonal legs moving in the same direction
+        """
+        0, #front left upper
+        1, #front left lower
+        2, #front right upper
+        3, #front right lower
+        4, #back left upper
+        5, #back left lower
+        6, #back right upper
+        7  #back right lower
+        """
+        """
+        def is_same_direction(a, b):
+            if ((a <= 0 and b <= 0) or (a >= 0 and b >= 0)):
+                return True
+            return False
+        same_leg_reward = 0
+        # front left upper and back right upper
+        if is_same_direction(self.joint_velocities[0], self.joint_velocities[6]):
+            same_leg_reward += 1
+        # front left lower and back right lower
+        if is_same_direction(self.joint_velocities[1], self.joint_velocities[7]):
+            same_leg_reward += 1
+        # front right upper and back left upper
+        if is_same_direction(self.joint_velocities[2], self.joint_velocities[4]):
+            same_leg_reward += 1
+        # front right lower and back right lower
+        if is_same_direction(self.joint_velocities[3], self.joint_velocities[5]):
+            same_leg_reward += 1
+        same_leg_reward *= 0.05
+        """
         # check if at least 3 feet are on the ground to encourage lifting of legs to walk
-        leg_penalty = 0
+        # leg_penalty = 0
         # if self.check_all_feet_on_ground():
         #     leg_penalty = -0.05
 
@@ -704,17 +758,16 @@ class LeggedEnv(gym.Env):
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
-        # print("leg penalty:", leg_penalty)
-        # print("roll penalty:", roll_penalty)
-        # print("pitch penalty:", pitch_penalty)
-        # print("alive_reward:", alive_reward)
-        # print("move_reward:", self.move_reward)
-        # print("position_reward:", self.position_reward)
-        # print("self.goal_reward:", self.goal_reward)
+        print("roll penalty:", roll_penalty)
+        print("pitch penalty:", pitch_penalty)
+        print("alive_reward:", alive_reward)
+        print("move_reward:", self.move_reward)
+        print("position_reward:", self.position_reward)
+        print("self.goal_reward:", self.goal_reward)
         
         # Sum of all rewards
-        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.move_reward)
-        # print("total reward:", reward)
+        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward)
+        print("total reward:", reward)
         return reward
     
     def process_and_cmd_vel(self):

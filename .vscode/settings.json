@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "${workspaceFolder}/assembly/Assem1.SLDASM"
+    "cmake.sourceDirectory": "${workspaceFolder}/assembly/Assem1.SLDASM",
+    "python.analysis.typeCheckingMode": "off"
 }

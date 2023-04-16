@@ -294,57 +294,7 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    # change observations to match that of paper
-    #Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=20, use_LSTM=False)
-    # added additional terminal conditions and dead penalty, increased multiplier for moving to 30
-    #Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=20, use_LSTM=False)
-    # train test2 for another 1 mil steps
-    # Train("SAC", num_timesteps=1e6, training_name='test3', num_vectorized_env=20, use_LSTM=False, load_path="./trained_models/test2/test2_1000000_steps.zip")
-    # increase dead penalty to -500 and add LSTM, update prev_action in the correct
-    #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=20, use_LSTM=True)
-    # change back move multiplier to 1 removed actions in obs space 
-    # Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=20, use_LSTM=True)
-    # removed timestep penalty added alive reward
-    #Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=20, use_LSTM=True)
-    # increase vel reward multiplier to 10, increase pitch penalty multiplier to 100
-    #Train("SAC", num_timesteps=1e6, training_name='test6', num_vectorized_env=20, use_LSTM=True)
-    # increase pitch penalty multiplier to 200
-    #Train("SAC", num_timesteps=1e6, training_name='test7', num_vectorized_env=25, use_LSTM=True)
-    # reduce max steps to 2000, cap forward velocity reward at 0.2, scale down pitch penalty to 100, removed position reward
-    # Train("SAC", num_timesteps=1e6, training_name='test8', num_vectorized_env=25, use_LSTM=True)
-    # same as test 8 but remove terminal condition for being too close to ground and reduce pitch penalty multiplier to 10
-    #Train("SAC", num_timesteps=1e6, training_name='test9', num_vectorized_env=25, use_LSTM=True)
-    # add back remove terminal condition for being too close to ground and reduce pitch penalty multiplier to 5
-    # Train("SAC", num_timesteps=1e6, training_name='test10', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # added position reward
-    #Train("SAC", num_timesteps=1e6, training_name='test11', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # added contact forces as obs, fixed CoM bugs, updated position reward
-    #Train("SAC", num_timesteps=1e6, training_name='test12', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # scaled down multiplier for move_reward to 0.01
-    #Train("SAC", num_timesteps=1e6, training_name='test13', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Added roll penalty
-    #Train("SAC", num_timesteps=1e6, training_name='test14', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Relaxed terminating condition (removed the height too low constraint)
-    #Train("SAC", num_timesteps=1e6, training_name='test15', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Relax roll and pitch penalty by having allowable range
-    #Train("SAC", num_timesteps=1e6, training_name='test16', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # reduce allowable range to 5 deg
-    #Train("SAC", num_timesteps=1e6, training_name='test17', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # change xyz dist to x dist
-    #Train("SAC", num_timesteps=1e6, training_name='test18', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # added penalty for robot having all 4 legs on ground to encourage lifting of legs, reduce move reward to 0.1, remove tolerance for pitch 
-    #Train("SAC", num_timesteps=1e6, training_name='test19', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # remove all terminal conditions except larg pitch / roll
-    #Train("SAC", num_timesteps=1e6, training_name='test20', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # increase alive reward (to 0.1) add back terminal conditions
-    #Train("SAC", num_timesteps=1e6, training_name='test21', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Add joint angles as observations
-    #Train("SAC", num_timesteps=1e6, training_name='test22', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # removed leg penalty
-    #Train("SAC", num_timesteps=1e6, training_name='test23', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # shift goal further away to 3m
-    #Train("SAC", num_timesteps=1e6, training_name='test24', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # unlimit velocity reward
-    #Train("SAC", num_timesteps=1e6, training_name='test25', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # increase pitch penalty
-    Train("SAC", num_timesteps=1e6, training_name='test26', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # reduced action space to dim 4
+    #Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # removed vel reward added position reward
+    Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
