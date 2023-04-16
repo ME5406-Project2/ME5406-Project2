@@ -47,7 +47,7 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=eval_eps)
     print("Mean rewards =", mean_reward)
     print("Std rewards =", std_reward)
-
+    
     # render the environment forever until ctrl-c is pressed
     obs = env.reset()
     while True:
@@ -79,4 +79,19 @@ if __name__ == "__main__":
     #Validation("SAC", "./trained_models/test12/test12_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test13/test13_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test14/best_model/best_model.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/test14/test14_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test14/test14_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test15/test15_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test16/test16_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test17/test17_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test18/test18_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test19/test19_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test20/test20_500000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test21/test21_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test21/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test22/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test23/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test24/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test25/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test25/test25_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test26/test26_1000000_steps.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/test26/best_model/best_model.zip", eval_eps=1)

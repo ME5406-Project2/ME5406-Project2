@@ -127,13 +127,13 @@ class LeggedEnv(gym.Env):
         Instantiates the robot in the simulation.
         """
         # Set the start pose of the robot
-        self.robot_start_pos = [0, 0, 0.80]
+        self.robot_start_pos = [0, 0, 0.50]
         self.robot_start_rpy = [0, 0, 0]
         self.robot_start_orn = p.getQuaternionFromEuler(self.robot_start_rpy)
         
         # Load the robot URDF into PyBullet
         self.robot = p.loadURDF(
-            "assembly/Assem1_v4.SLDASM/urdf/Assem1_v4.SLDASM.urdf", 
+            "assembly/Assem1_v5.SLDASM/urdf/Assem1_v5.SLDASM.urdf", 
             self.robot_start_pos, 
             self.robot_start_orn)
 
@@ -269,8 +269,8 @@ class LeggedEnv(gym.Env):
         
         # Joint limits actually exceeded
         for index, joint_pos in enumerate(commanded_joint_positions):
-            if joint_pos < -math.radians(90):
-                commanded_joint_positions[index] = -math.radians(90)
+            if joint_pos < -math.radians(45):
+                commanded_joint_positions[index] = -math.radians(45)
             elif joint_pos > math.radians(90):
                 commanded_joint_positions[index] = math.radians(90)
         
@@ -347,7 +347,7 @@ class LeggedEnv(gym.Env):
         
     def xyz_obj_dist_to_goal(self):
 
-        dist = np.linalg.norm(self.base_pos - self.goal_pos)
+        dist = np.linalg.norm(self.base_pos[0] - self.goal_pos[0])
         # print(dist)
         return dist
     
@@ -477,6 +477,26 @@ class LeggedEnv(gym.Env):
             return True
         else:
             return False
+    
+    def check_all_feet_on_ground(self):
+
+        # Link IDs of the end-effectors
+        # Respectively: FL, FR, BL, BR
+        foot_link_ids = [1, 3, 5, 7]
+        foot_contacts = [False] * 4
+
+        for i, foot_id in enumerate(foot_link_ids):
+            closest_points = p.getClosestPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=foot_id,
+                                                distance=0.05)
+            if len(closest_points) > 0:
+                foot_contacts[i] = True
+        # print(foot_contacts)
+        # all_on_ground = all(element == True for element in foot_contacts)
+        all_on_ground = foot_contacts.count(True)>2
+        return all_on_ground
+
 
     def get_observation(self):
         
@@ -610,7 +630,7 @@ class LeggedEnv(gym.Env):
             *normalized_center_of_mass, #in paper
             *normalized_base_orn, #in paper
             *normalized_joint_velocities, #in paper
-            # *normalized_joint_angles,
+            *normalized_joint_angles,
             *self.normalized_base_lin_vel, #in paper
             *normalized_base_ang_vel, #in paper
             # np.array(self.normalized_base_height),
@@ -634,13 +654,13 @@ class LeggedEnv(gym.Env):
         self.position_reward = 0.01 / 2**self.normalized_goal_dist
         # Robot is moving
         self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
-        self.move_reward = min(self.move_reward, 0.2)
+        # self.move_reward = min(self.move_reward, 0.1)
         # self.move_reward = max(1, self.move_reward)
         # time step penalty
         # time_step_penalty = -0.005
 
         # alive reward
-        alive_reward = 0.005
+        alive_reward = 0.1 #0.005
 
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
@@ -665,8 +685,17 @@ class LeggedEnv(gym.Env):
         #     self.stability_reward = 1 #0.1
 
         # penalize for too much tilting forward or backwards
-        pitch_penalty = -5 * pitch**2
-        roll_penalty = -5 * roll**2
+        pitch_penalty = 0
+        roll_penalty = 0
+        #if abs(pitch) > math.radians(0):
+        pitch_penalty = -15 * pitch**2
+        if abs(roll) > math.radians(5):
+            roll_penalty = -5 * roll**2
+        
+        # check if at least 3 feet are on the ground to encourage lifting of legs to walk
+        leg_penalty = 0
+        # if self.check_all_feet_on_ground():
+        #     leg_penalty = -0.05
 
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
@@ -675,6 +704,7 @@ class LeggedEnv(gym.Env):
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
+        # print("leg penalty:", leg_penalty)
         # print("roll penalty:", roll_penalty)
         # print("pitch penalty:", pitch_penalty)
         # print("alive_reward:", alive_reward)
@@ -683,7 +713,7 @@ class LeggedEnv(gym.Env):
         # print("self.goal_reward:", self.goal_reward)
         
         # Sum of all rewards
-        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.move_reward + self.position_reward)
+        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.move_reward)
         # print("total reward:", reward)
         return reward
     
@@ -726,7 +756,7 @@ class LeggedEnv(gym.Env):
         # Height of torso is too low (less than 0.2 of original height)
         # if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
         #     is_unrecoverable = True
-        #     print("height too low")
+        #     # print("height too low")
         # Torso of robot touches ground
         if (len(contact_points) > 0):
             is_unrecoverable = True
