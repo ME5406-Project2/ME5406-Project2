@@ -6,6 +6,7 @@ import time
 import numpy as np
 from Surface import Surface
 from gym.spaces import MultiDiscrete
+from gym import GoalEnv
 
 class LeggedEnv(gym.Env):
     """
@@ -287,9 +288,8 @@ class LeggedEnv(gym.Env):
         joint_positions = []
         # Find the actions based on pre-defined mappings
         for joint, index in enumerate(action):
-            joint_velocity = self.joint_to_action_map[joint][index]
-            joint_positions.append(joint_velocity)
-        print(joint_positions)
+            joint_pos = self.joint_to_action_map[joint][index]
+            joint_positions.append(joint_pos)
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
                                     p.POSITION_CONTROL, targetPositions=-np.array(joint_positions))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
@@ -424,6 +424,7 @@ class LeggedEnv(gym.Env):
                                     p.POSITION_CONTROL, targetPositions=leg_positions)
         # p.setJointMotorControlArray(self.robot, range(len(self.actuators)), 
         #                            p.VELOCITY_CONTROL, targetVelocities=[10, 5, 10, 10, 10, 0, -5, -5])
+        print("leg_positions",leg_positions)
         p.stepSimulation()
         time.sleep(1/240)
         self.env_step_count += 1
