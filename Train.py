@@ -54,13 +54,13 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     :param save_freq: frequency to save model
     """
     if (num_vectorized_env>1):
-        # env = make_vec_env(env_id=LeggedEnv,
-        #                    n_envs=num_vectorized_env,
-        #                    vec_env_cls=SubprocVecEnv,
-        #                    wrapper_class=DiscreteActionWrapper)
         env = make_vec_env(env_id=LeggedEnv,
                            n_envs=num_vectorized_env,
-                           vec_env_cls=SubprocVecEnv)
+                           vec_env_cls=SubprocVecEnv,
+                           wrapper_class=DiscreteActionWrapper)
+        # env = make_vec_env(env_id=LeggedEnv,
+        #                    n_envs=num_vectorized_env,
+        #                    vec_env_cls=SubprocVecEnv)
     else:
         # to use dummy env or actual env
         if use_dummy:
@@ -231,14 +231,14 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         eval_env = make_dummy_env()
         eval_env = Monitor(eval_env)
     else:
-        #eval_env = make_env()
-        # eval_env = make_vec_env(env_id=LeggedEnv,
-        #                    n_envs=5,
-        #                    vec_env_cls=SubprocVecEnv,
-        #                    wrapper_class=DiscreteActionWrapper)
+        eval_env = make_env()
         eval_env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=10,
-                           vec_env_cls=SubprocVecEnv)
+                           n_envs=5,
+                           vec_env_cls=SubprocVecEnv,
+                           wrapper_class=DiscreteActionWrapper)
+        # eval_env = make_vec_env(env_id=LeggedEnv,
+        #                    n_envs=10,
+        #                    vec_env_cls=SubprocVecEnv)
     
 
     # callback for regular evaluation and save best model
@@ -271,7 +271,7 @@ def make_env(use_gui=False):
     env = LeggedEnv(use_gui=use_gui)
     # discretize actions using wrapper
     # env = VecFrameStack(env, n_stack=4)
-    env = DiscreteActionWrapper(env)
+    # env = DiscreteActionWrapper(env)
     return env
 
 def copy_log_file(load_path, dst, algorithm):
@@ -303,5 +303,5 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
+    Train("SAC", num_timesteps=1e6, training_name='SACTEST')
     #training11or12
