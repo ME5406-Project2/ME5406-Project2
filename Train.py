@@ -304,5 +304,7 @@ if __name__ == "__main__":
     #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=25, use_LSTM=False, learning_rate=0.01, batch_size=512)
     # removed contact forces as obs, changed position reward (robot starts lifting legs)
     #Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Add back move rewards
-    Train("SAC", num_timesteps=1e6, training_name='test6', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # Add back move rewards (reached state of eqm)
+    #Train("SAC", num_timesteps=1e6, training_name='test6', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # Increased range of allowance for pitch and roll, halved multiplier to 5, replace position reward with a log fn
+    Train("SAC", num_timesteps=1e6, training_name='test7', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)

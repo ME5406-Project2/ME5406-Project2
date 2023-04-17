@@ -673,7 +673,7 @@ class LeggedEnv(gym.Env):
             self.goal_reward = 0
         # Robot is moving towards goal - Position
         # self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
-        self.position_reward = -0.05 * self.xyz_obj_dist_to_goal()
+        self.position_reward = -math.log(max(self.xyz_obj_dist_to_goal(),0)+1)
         # if self.xyz_obj_dist_to_goal() >= self.prev_dist:
         #     self.position_reward = -0.1
         # Reward increases as robot approaches goal
@@ -713,10 +713,10 @@ class LeggedEnv(gym.Env):
         # penalize for too much tilting forward or backwards or sideways
         pitch_penalty = 0
         roll_penalty = 0
-        #if abs(pitch) > math.radians(0):
-        pitch_penalty = -5 * pitch**2
-        if abs(roll) > math.radians(5):
-            roll_penalty = -5 * roll**2
+        if abs(pitch) > math.radians(7.5):
+            pitch_penalty = -2.5 * pitch**2
+        if abs(roll) > math.radians(10):
+            roll_penalty = -2.5 * roll**2
         
         # reward for diagonal legs moving in the same direction
         """
@@ -906,9 +906,9 @@ class LeggedEnv(gym.Env):
         #print("robot init height",self.robot_init_height)
         #print("normalized base height", self.normalized_base_height)
         #print(np.array(p.getBasePositionAndOrientation(self.robot)[0]))
-        if (self.normalized_base_height < 0 and not -0.1 <= self.normalized_base_height <= 0.1):
-            print("negative", self.normalized_base_height)
-            print(self.base_pos)
+        # if (self.normalized_base_height < 0 and not -0.1 <= self.normalized_base_height <= 0.1):
+        #     print("negative", self.normalized_base_height)
+        #     print(self.base_pos)
         closest_points = p.getClosestPoints(bodyA=self.robot, 
                                                 bodyB=self.surface.plane_id, 
                                                 linkIndexA=-1,
@@ -928,7 +928,7 @@ class LeggedEnv(gym.Env):
         #print(self.normalized_base_orn)
         # Step the simulation
         p.stepSimulation()
-        # print(env.get_observation())
+        self.get_observation()
         self.get_reward()
 
 if __name__ == "__main__":
