@@ -94,10 +94,18 @@ class LeggedEnv(gym.Env):
         #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
         # }
 
+        # self.joint_to_action_map = {
+        #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
+        #     1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
+        # }
+
         self.joint_to_action_map = {
-            0: np.array([-0.30, -0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
-            1: np.array([-0.30, -0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]),
+            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Left
+            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Right
+            2: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Left
+            3: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Right
         }
+
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
         planeId = p.loadURDF("plane.urdf")
@@ -199,25 +207,7 @@ class LeggedEnv(gym.Env):
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
     def reset(self):
-        # # open the file in write mode
-        # with open("jointvel.txt", "w") as file:
-        #     # iterate over the list of lists
-        #     for inner_list in self.store_joint_vel:
-        #         # convert the inner list to a string
-        #         inner_list_string = ",".join([str(x) for x in inner_list])
 
-        #         # write the inner list as a line in the file
-        #         file.write(inner_list_string + "\n")        
-        # file.close()
-        # Reset reward and step count for episode
-
-        # with open("jointvel.txt", "r") as file:
-
-        #     # read each line of the file and split it into a list
-        #     for line in file:
-        #         inner_list = [int(x) for x in line.strip().split(",")]
-        #         self.store_joint_vel.append(inner_list)
-        # print(self.reward)
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -260,44 +250,28 @@ class LeggedEnv(gym.Env):
     
     def step(self, action):
 
-        # if self.env_step_count > 200:
-        # self.cpg_first = False
-        # joint_velocities = []
-        # if not self.continuous_action_space:
-        #     # Find the actions based on pre-defined mappings
-        #     for joint, index in enumerate(action):
-        #         joint_velocity = self.joint_to_action_map[joint][index]
-        #         joint_velocities.append(joint_velocity)
-        # else:
-        #     joint_velocities = list(action)
-        # # Check if joint limits exceeded
-        # commanded_joint_positions = [0] * self.num_of_joints
-        # current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-        #                             for i in range(self.num_of_joints)])
-        # for index in range(self.num_of_joints):
-        #     change_in_joint_pos = joint_velocities[index] * (1 / 240)
-        #     commanded_joint_positions[index] = current_joint_positions[index] + change_in_joint_pos
-        # # # Joint limits actually exceeded
-        # # for index, joint_pos in enumerate(commanded_joint_positions):
-        # #     if joint_pos < -1.57 or joint_pos > 1.57:
-        # #         joint_velocities = self.prev_joint_velocities
-        
-        # p.setJointMotorControlArray(self.robot, self.actuators,
-        #                             p.POSITION_CONTROL, targetPositions=commanded_joint_positions)
-        
         # CPG-style position control
-        joint_positions = []
-        # Find the actions based on pre-defined mappings
-        for joint, index in enumerate(action):
-            joint_pos = self.joint_to_action_map[joint][index]
-            joint_positions.append(joint_pos)
-        for joint_pos in joint_positions:
-            joint_positions.append(-1*joint_pos)
-        
+        # joint_positions = []
+        # # Find the actions based on pre-defined mappings
+        # for joint, index in enumerate(action):
+        #     joint_pos = self.joint_to_action_map[joint][index]
+        #     joint_positions.append(joint_pos)
+        # cmd_joint_pos = []
+        # cmd_joint_pos.extend(joint_positions)
+        # for joint_pos in joint_positions:
+        #     negate_joint_pos = joint_pos * -1.0
+        #     cmd_joint_pos.append(negate_joint_pos)
+
+  
+        # p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
+        #                             p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
+        # p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
+        #                             p.POSITION_CONTROL, targetPositions=cmd_joint_pos)
+
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=-np.array(joint_positions))
+                                    p.POSITION_CONTROL, targetPositions=-np.array(action))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=joint_positions)
+                                    p.POSITION_CONTROL, targetPositions=action)
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
@@ -311,7 +285,6 @@ class LeggedEnv(gym.Env):
         
         # Get the observation
         observation = self.get_observation()
-
         # # Update buffer
         # self.buffer[:-1] = self.buffer[1:]
         # self.buffer[-1] = observation
@@ -387,6 +360,31 @@ class LeggedEnv(gym.Env):
                                         basePosition=box_pos,
                                         baseOrientation=box_orn)
         
+        self.start_joint_pos = [
+            0, #front left upper
+            0, #front left lower
+            0, #front right upper
+            0, #front right lower
+            0, #back left upper
+            0, #back left lower
+            0, #back right upper
+            0  #back right lower
+        ]
+        
+        # create a collision shape for the triangular block
+        # half_size = [2, 2, 0.07]
+        # block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
+
+        # # create a multi-body object for the triangular block
+        # block_position = [5, 0, 0]
+        # block_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        # block_body = p.createMultiBody(
+        #     baseMass=0,
+        #     baseCollisionShapeIndex=block_shape,
+        #     basePosition=block_position,
+        #     baseOrientation=block_orientation,
+        # )
+        
     def cpg_position_controller(self, t):
         
         # Set the CPG parameters
@@ -433,7 +431,7 @@ class LeggedEnv(gym.Env):
         # p.setJointMotorControlArray(self.robot, range(len(self.actuators)), 
         #                            p.VELOCITY_CONTROL, targetVelocities=[10, 5, 10, 10, 10, 0, -5, -5])
         p.stepSimulation()
-        time.sleep(1/240)
+        # time.sleep(1/240)
         self.env_step_count += 1
 
         # Get the observation
