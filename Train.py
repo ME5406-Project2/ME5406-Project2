@@ -351,4 +351,12 @@ if __name__ == "__main__":
     # reduce learning rate to 0.001
     # Train("SAC", num_timesteps=1e6, training_name='test27', num_vectorized_env=25, use_LSTM=True, learning_rate=0.001, batch_size=512)
     # reduce learning rate to 0.0001
-    Train("SAC", num_timesteps=1e6, training_name='test28', num_vectorized_env=25, use_LSTM=True, learning_rate=0.0001, batch_size=512)
+    #Train("SAC", num_timesteps=1e6, training_name='test28', num_vectorized_env=25, use_LSTM=True, learning_rate=0.0001, batch_size=512)
+    # use new reward system
+    #Train("SAC", num_timesteps=1e6, training_name='test29', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # added reward for diagonal legs, halve distance reward
+    #Train("SAC", num_timesteps=1e6, training_name='test30', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # apply same leg rewards only to upper legs
+    #Train("SAC", num_timesteps=1e6, training_name='test31', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # remove contact forces
+    Train("SAC", num_timesteps=1e6, training_name='test32', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
