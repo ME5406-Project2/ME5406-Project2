@@ -231,7 +231,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         eval_env = make_dummy_env()
         eval_env = Monitor(eval_env)
     else:
-        eval_env = make_env()
+        # eval_env = make_env()
         eval_env = make_vec_env(env_id=LeggedEnv,
                            n_envs=5,
                            vec_env_cls=SubprocVecEnv,
@@ -271,7 +271,7 @@ def make_env(use_gui=False):
     env = LeggedEnv(use_gui=use_gui)
     # discretize actions using wrapper
     # env = VecFrameStack(env, n_stack=4)
-    # env = DiscreteActionWrapper(env)
+    env = DiscreteActionWrapper(env)
     return env
 
 def copy_log_file(load_path, dst, algorithm):
