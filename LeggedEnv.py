@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 5000
+        self.max_steps = 2500
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -94,10 +94,10 @@ class LeggedEnv(gym.Env):
         #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
         # }
 
-        # self.joint_to_action_map = {
-        #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
-        #     1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
-        # }
+        self.joint_to_action_map = {
+            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
+            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
+        }
 
         # self.joint_to_action_map = {
         #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Left
@@ -122,11 +122,11 @@ class LeggedEnv(gym.Env):
         self.spawn_robot()
         self.generate_goal()
         
-        self.continuous_action_space = True
+        self.continuous_action_space = False
 
         if self.continuous_action_space:
             self.action_space = gym.spaces.Box(
-            low=-0.5, high=0.5, shape=(2,), dtype=np.float64)
+            low=-50.0, high=50.0, shape=(8,), dtype=np.float64)
         else:
             # Define action space
             actions = [len(self.joint_to_action_map[key]) for key in range(len(self.joint_to_action_map))]
@@ -254,7 +254,7 @@ class LeggedEnv(gym.Env):
         joint_positions = []
         # Find the actions based on pre-defined mappings
         for joint, index in enumerate(action):
-            # joint_pos = self.joint_to_action_map[joint][index]
+            joint_pos = self.joint_to_action_map[joint][index]
             joint_positions.append(joint_pos)
         cmd_joint_pos = []
         cmd_joint_pos.extend(joint_positions)
@@ -347,7 +347,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [5, -0.25, 0]
+        box_pos = [5.8, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -393,9 +393,14 @@ class LeggedEnv(gym.Env):
 
         p.changeDynamics(
             block_body, -1,
-            contactStiffness=0.001,
-            contactDamping=20.0,
-            restitution=10.0)
+            contactStiffness=0.01,
+            contactDamping=1.0,
+            restitution=10.0,
+            lateralFriction=1000.0,
+            rollingFriction=1000.0,
+            spinningFriction=1000.0,
+            frictionAnchor=True,
+            anisotropicFriction=[1.0, 0.05, 0.05])
         
     def cpg_position_controller(self, t):
         
