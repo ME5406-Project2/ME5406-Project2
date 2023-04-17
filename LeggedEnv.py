@@ -657,7 +657,7 @@ class LeggedEnv(gym.Env):
             *self.normalized_base_lin_vel, #in paper
             *normalized_base_ang_vel, #in paper
             # np.array(self.normalized_base_height),
-            contact_forces,
+            # contact_forces,
             *normalized_rpy,
             np.array(self.normalized_goal_dist, dtype=np.float64),
             np.array(relative_goal_vect, dtype=np.float64)
@@ -672,7 +672,10 @@ class LeggedEnv(gym.Env):
         else:
             self.goal_reward = 0
         # Robot is moving towards goal - Position
-        self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
+        # self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
+        self.position_reward = -0.75 * self.xyz_obj_dist_to_goal()
+        # if self.xyz_obj_dist_to_goal() >= self.prev_dist:
+        #     self.position_reward = -0.1
         # Reward increases as robot approaches goal
         # self.position_reward = 0.01 / 2**self.normalized_goal_dist
         # Robot is moving
@@ -758,16 +761,16 @@ class LeggedEnv(gym.Env):
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
 
-        print("roll penalty:", roll_penalty)
-        print("pitch penalty:", pitch_penalty)
-        print("alive_reward:", alive_reward)
-        print("move_reward:", self.move_reward)
-        print("position_reward:", self.position_reward)
-        print("self.goal_reward:", self.goal_reward)
+        # print("roll penalty:", roll_penalty)
+        # print("pitch penalty:", pitch_penalty)
+        # print("alive_reward:", alive_reward)
+        # print("move_reward:", self.move_reward)
+        # print("position_reward:", self.position_reward)
+        # print("self.goal_reward:", self.goal_reward)
         
         # Sum of all rewards
         reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward)
-        print("total reward:", reward)
+        # print("total reward:", reward)
         return reward
     
     def process_and_cmd_vel(self):

@@ -28,7 +28,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 20000
+          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 40000
           ):
     """
     Trains the agent and logs the training process onto tensorboard
@@ -297,4 +297,10 @@ if __name__ == "__main__":
     # reduced action space to dim 4
     #Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
     # removed vel reward added position reward
-    Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # Added penalty for staying in place (replace moving forward reward)
+    #Train("SAC", num_timesteps=1e6, training_name='test3', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # removed LSTM
+    #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=25, use_LSTM=False, learning_rate=0.01, batch_size=512)
+    # removed contact forces as obs, changed position reward
+    Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
