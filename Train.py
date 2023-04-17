@@ -17,6 +17,8 @@ from stable_baselines3.common.vec_env import VecMonitor
 import os
 from LeggedEnv import LeggedEnv
 
+import torch
+
 # to use dummy env or actual env
 use_dummy = False
 
@@ -252,6 +254,10 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     else:
         reset_num_timestep = True
     
+    # Transferring the model to a CUDA enabled GPU
+    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # model = model.to(device)
+  
     # Train model
     model.learn(total_timesteps=int(num_timesteps), progress_bar=True, callback=cb_list, reset_num_timesteps=reset_num_timestep)
 
@@ -325,30 +331,4 @@ if __name__ == "__main__":
     # Added roll penalty
     #Train("SAC", num_timesteps=1e6, training_name='test14', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
     # Relaxed terminating condition (removed the height too low constraint)
-    #Train("SAC", num_timesteps=1e6, training_name='test15', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Relax roll and pitch penalty by having allowable range
-    #Train("SAC", num_timesteps=1e6, training_name='test16', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # reduce allowable range to 5 deg
-    #Train("SAC", num_timesteps=1e6, training_name='test17', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # change xyz dist to x dist
-    #Train("SAC", num_timesteps=1e6, training_name='test18', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # added penalty for robot having all 4 legs on ground to encourage lifting of legs, reduce move reward to 0.1, remove tolerance for pitch 
-    #Train("SAC", num_timesteps=1e6, training_name='test19', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # remove all terminal conditions except larg pitch / roll
-    #Train("SAC", num_timesteps=1e6, training_name='test20', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # increase alive reward (to 0.1) add back terminal conditions
-    #Train("SAC", num_timesteps=1e6, training_name='test21', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # Add joint angles as observations
-    #Train("SAC", num_timesteps=1e6, training_name='test22', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # removed leg penalty
-    #Train("SAC", num_timesteps=1e6, training_name='test23', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # shift goal further away to 3m
-    #Train("SAC", num_timesteps=1e6, training_name='test24', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # unlimit velocity reward
-    #Train("SAC", num_timesteps=1e6, training_name='test25', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # increase pitch penalty
-    #Train("SAC", num_timesteps=1e6, training_name='test26', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
-    # reduce learning rate to 0.001
-    # Train("SAC", num_timesteps=1e6, training_name='test27', num_vectorized_env=25, use_LSTM=True, learning_rate=0.001, batch_size=512)
-    # reduce learning rate to 0.0001
-    Train("SAC", num_timesteps=1e6, training_name='test28', num_vectorized_env=25, use_LSTM=True, learning_rate=0.0001, batch_size=512)
+    Train("SAC", num_timesteps=3e5, training_name='test18', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)

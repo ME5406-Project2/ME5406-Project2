@@ -4,6 +4,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.sac.policies import SACPolicy
 
+
 device = (
     "cuda"
     if torch.cuda.is_available()
@@ -12,7 +13,6 @@ device = (
     else "cpu"
 )
 print(f"Using {device} device")
-
 
 # create a custom LSTM feature extractor
 class LSTMFeatureExtractor(nn.Module):
