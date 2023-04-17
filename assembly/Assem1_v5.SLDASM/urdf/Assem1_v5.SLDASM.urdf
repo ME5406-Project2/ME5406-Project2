@@ -146,7 +146,7 @@
   </link>
   <joint
     name="fll"
-    type="revolute">
+    type="fixed">
     <origin
       xyz="0.25 0 0"
       rpy="0 0 1.1897" />
@@ -266,7 +266,7 @@
   </link>
   <joint
     name="frl"
-    type="revolute">
+    type="fixed">
     <origin
       xyz="0.25 0 0"
       rpy="0 0 -1.2425" />
@@ -386,7 +386,7 @@
   </link>
   <joint
     name="bll"
-    type="revolute">
+    type="fixed">
     <origin
       xyz="0.25 0 0"
       rpy="0 0 1.3519" />
@@ -506,7 +506,7 @@
   </link>
   <joint
     name="brl"
-    type="revolute">
+    type="fixed">
     <origin
       xyz="0.25 0 0"
       rpy="0 0 -1.4826" />

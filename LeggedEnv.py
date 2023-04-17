@@ -119,7 +119,7 @@ class LeggedEnv(gym.Env):
         obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
             low=-1, high=1, shape=(obs_shape), dtype=np.float64)
-        
+
         # time interval between each timesteps
         self.timestep = 0.004#0.004
         p.setTimeStep(self.timestep)
@@ -163,17 +163,13 @@ class LeggedEnv(gym.Env):
 
         self.start_joint_pos = [
             0, #front left upper
-            0, #front left lower
             0, #front right upper
-            0, #front right lower
             0, #back left upper
-            0, #back left lower
             0, #back right upper
-            0  #back right lower
         ]
 
         # Set the joint positions
-        for i in range(self.num_of_joints):
+        for i in range(len(self.actuators)):
             p.resetJointState(self.robot, self.actuators[i], self.start_joint_pos[i])
         
         # Set all the motors to position or velocity or torque control
@@ -204,25 +200,6 @@ class LeggedEnv(gym.Env):
         self.robot_init_height = np.array(p.getBasePositionAndOrientation(self.robot)[0])[2]
 
     def reset(self):
-        # # open the file in write mode
-        # with open("jointvel.txt", "w") as file:
-        #     # iterate over the list of lists
-        #     for inner_list in self.store_joint_vel:
-        #         # convert the inner list to a string
-        #         inner_list_string = ",".join([str(x) for x in inner_list])
-
-        #         # write the inner list as a line in the file
-        #         file.write(inner_list_string + "\n")        
-        # file.close()
-        # Reset reward and step count for episode
-
-        # with open("jointvel.txt", "r") as file:
-
-        #     # read each line of the file and split it into a list
-        #     for line in file:
-        #         inner_list = [int(x) for x in line.strip().split(",")]
-        #         self.store_joint_vel.append(inner_list)
-        # print(self.reward)
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -259,32 +236,22 @@ class LeggedEnv(gym.Env):
 
         """
         0, #front left upper
-        1, #front left lower
         2, #front right upper
-        3, #front right lower
         4, #back left upper
-        5, #back left lower
         6, #back right upper
-        7  #back right lower
         """
         # Find the actions based on pre-defined mappings
         for joint, index in enumerate(action):
             joint_velocity = self.joint_to_action_map[joint][index]
             joint_velocities.append(joint_velocity)
         
-        # Append the same action to the diagonal back legs
-        joint_velocities.append(joint_velocities[2]) # apply front right upper actions to back left upper
-        joint_velocities.append(joint_velocities[3]) # apply front right lower actions to back left lower
-        joint_velocities.append(joint_velocities[0]) # apply front left upper actions to back right upper
-        joint_velocities.append(joint_velocities[1]) # apply front left lower actions to back right lower
-
         # Check if joint limits exceeded
-        commanded_joint_positions = [0] * self.num_of_joints
-        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                    for i in range(self.num_of_joints)])
-        current_joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
-                                    for i in range(self.num_of_joints)])
-        for index in range(self.num_of_joints):
+        commanded_joint_positions = [0] * len(self.actuators)
+        current_joint_positions = self.joint_positions = np.array([p.getJointState(self.robot, i)[0] 
+                                    for i in self.actuators])
+        current_joint_velocities = np.array([p.getJointState(self.robot, i)[1] 
+                                    for i in self.actuators])
+        for index in range(len(self.actuators)):
             # find change in angle using s = ut + 0.5 a t^2
             joint_acceleration = (joint_velocities[index] - current_joint_velocities[index]) / self.timestep
             change_in_joint_pos = joint_velocities[index] * self.timestep + 0.5 * joint_acceleration * self.timestep ** 2
@@ -344,27 +311,6 @@ class LeggedEnv(gym.Env):
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
         self.prev_joint_velocities = self.joint_velocities
-
-        # else:
-
-        #     leg_positions = self.cpg_position_controller(self.t)
-        #     p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
-        #                                 p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
-        #     p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
-        #                                 p.POSITION_CONTROL, targetPositions=leg_positions)
-        #     p.stepSimulation()
-        #     # time.sleep(1/240)
-        #     self.env_step_count += 1
-        #     # Get the observation
-        #     observation = self.get_observation()
-
-        #     reward = 0
-
-        #     self.prev_joint_velocities = self.joint_velocities
-        #     self.t+=1/240
-
-        #     done = False
-
     
         return observation, reward, done, {}
         
@@ -444,7 +390,6 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
             print("GOAL REACHED")
-            print(self.reward)
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
@@ -524,24 +469,24 @@ class LeggedEnv(gym.Env):
     def get_observation(self):
         
         # Positions of all 8 joints
-        self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                       for i in range(self.num_of_joints)])
+        self.joint_positions = np.array([p.getJointState(self.robot, i)[0] 
+                                       for i in self.actuators])
         # print(self.joint_positions)
         # relative joint angle in radians
         # range = [-pi/2, pi/2] -> divide by pi/2 to normalize to [-1,1]
         normalized_joint_angles = np.array(self.joint_positions / (np.pi / 2), dtype=np.float64)
 
         # Velocities of all 8 joints
-        self.joint_velocities = np.array([p.getJointState(self.robot, self.actuators[i])[1] 
-                                       for i in range(self.num_of_joints)])
+        self.joint_velocities = np.array([p.getJointState(self.robot, i)[1] 
+                                       for i in self.actuators])
         # v_max (set in urdf file) = p.getJointInfo()[11]
         # normalize joint (angular) velocities [-v_max,v_max] -> [-1,1] (divide by v_max)
-        max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(self.num_of_joints)])
+        max_angular_velocity = np.array([self.actuators_info[i][11] for i in range(len(self.actuators))])
         normalized_joint_velocities = np.array(np.divide(self.joint_velocities, max_angular_velocity), dtype=np.float64)
 
         # Reaction forces of all 8 joints
-        joint_reaction_forces = np.array([p.getJointState(self.robot, self.actuators[i])[2] 
-                                    for i in range(self.num_of_joints)])
+        joint_reaction_forces = np.array([p.getJointState(self.robot, i)[2] 
+                                    for i in self.actuators])
         
         # NOTE f_max not defined in URDF (might be useful for slippage stuff?)
         # f_max = p.getJointInfo()[10]
@@ -776,8 +721,8 @@ class LeggedEnv(gym.Env):
     def process_and_cmd_vel(self):
         joint_pos_arr = []
         for joint_vel in self.store_joint_vel:
-            joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
-                                       for i in range(self.num_of_joints)])
+            joint_positions = np.array([p.getJointState(self.robot, i)[0] 
+                                       for i in self.actuators])
             for idx, vel in enumerate(joint_vel):
                 change_in_joint_pos = vel 
                 joint_pos = joint_positions[idx] + change_in_joint_pos
