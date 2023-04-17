@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 1300
+        self.max_steps = 5000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -94,17 +94,17 @@ class LeggedEnv(gym.Env):
         #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
         # }
 
-        # self.joint_to_action_map = {
-        #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
-        #     1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
-        # }
-
         self.joint_to_action_map = {
-            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Left
-            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Right
-            2: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Left
-            3: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Right
+            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
+            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
         }
+
+        # self.joint_to_action_map = {
+        #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Left
+        #     1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Right
+        #     2: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Left
+        #     3: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Right
+        # }
 
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -251,27 +251,26 @@ class LeggedEnv(gym.Env):
     def step(self, action):
 
         # CPG-style position control
-        # joint_positions = []
-        # # Find the actions based on pre-defined mappings
-        # for joint, index in enumerate(action):
-        #     joint_pos = self.joint_to_action_map[joint][index]
-        #     joint_positions.append(joint_pos)
-        # cmd_joint_pos = []
-        # cmd_joint_pos.extend(joint_positions)
-        # for joint_pos in joint_positions:
-        #     negate_joint_pos = joint_pos * -1.0
-        #     cmd_joint_pos.append(negate_joint_pos)
-
-  
-        # p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
-        #                             p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
-        # p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
-        #                             p.POSITION_CONTROL, targetPositions=cmd_joint_pos)
+        joint_positions = []
+        # Find the actions based on pre-defined mappings
+        for joint, index in enumerate(action):
+            joint_pos = self.joint_to_action_map[joint][index]
+            joint_positions.append(joint_pos)
+        cmd_joint_pos = []
+        cmd_joint_pos.extend(joint_positions)
+        for joint_pos in joint_positions:
+            negate_joint_pos = joint_pos * -1.0
+            cmd_joint_pos.append(negate_joint_pos)
 
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=-np.array(action))
+                                    p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
-                                    p.POSITION_CONTROL, targetPositions=action)
+                                    p.POSITION_CONTROL, targetPositions=cmd_joint_pos)
+
+        # p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
+        #                             p.POSITION_CONTROL, targetPositions=-np.array(action))
+        # p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
+        #                             p.POSITION_CONTROL, targetPositions=action)
         # Send action velocities to robot joints
         # p.setJointMotorControlArray(self.robot, self.actuators, 
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
@@ -348,7 +347,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [2, -0.2, 0]
+        box_pos = [4, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -372,18 +371,30 @@ class LeggedEnv(gym.Env):
         ]
         
         # create a collision shape for the triangular block
-        # half_size = [2, 2, 0.07]
-        # block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
+        half_size = [2, 2, 0.04]
+        block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
-        # # create a multi-body object for the triangular block
-        # block_position = [5, 0, 0]
-        # block_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        # block_body = p.createMultiBody(
-        #     baseMass=0,
-        #     baseCollisionShapeIndex=block_shape,
-        #     basePosition=block_position,
-        #     baseOrientation=block_orientation,
-        # )
+        # create a multi-body object for the triangular block
+        block_position = [4, 0, 0]
+        block_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        block_body = p.createMultiBody(
+            baseMass=0,
+            baseCollisionShapeIndex=block_shape,
+            basePosition=block_position,
+            baseOrientation=block_orientation,
+        )
+
+        p.changeVisualShape(block_body, -1, rgbaColor=[101/255, 67/255, 33/255, 1])
+        light_direction = [1, 1, 1]  # Direction of the light
+        light_color = [1, 1, 1]  # Color of the light (white)
+        light_id = p.addUserDebugParameter("light", -1, 1, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
+
+        p.changeDynamics(
+            block_body, -1,
+            contactStiffness=1.0,
+            contactDamping=1.0)
         
     def cpg_position_controller(self, t):
         
@@ -412,6 +423,7 @@ class LeggedEnv(gym.Env):
             self.cpg_cnt+=1
 
         leg_positions = self.cpg_position_controller(t)
+        print(leg_positions)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
         observation = self.get_observation()
@@ -431,7 +443,7 @@ class LeggedEnv(gym.Env):
         # p.setJointMotorControlArray(self.robot, range(len(self.actuators)), 
         #                            p.VELOCITY_CONTROL, targetVelocities=[10, 5, 10, 10, 10, 0, -5, -5])
         p.stepSimulation()
-        # time.sleep(1/240)
+        time.sleep(1/240)
         self.env_step_count += 1
 
         # Get the observation
