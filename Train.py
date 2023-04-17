@@ -349,6 +349,6 @@ if __name__ == "__main__":
     # increase pitch penalty
     #Train("SAC", num_timesteps=1e6, training_name='test26', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
     # reduce learning rate to 0.001
-    Train("SAC", num_timesteps=1e6, training_name='test27', num_vectorized_env=25, use_LSTM=True, learning_rate=0.001, batch_size=512)
+    # Train("SAC", num_timesteps=1e6, training_name='test27', num_vectorized_env=25, use_LSTM=True, learning_rate=0.001, batch_size=512)
     # reduce learning rate to 0.0001
     Train("SAC", num_timesteps=1e6, training_name='test28', num_vectorized_env=25, use_LSTM=True, learning_rate=0.0001, batch_size=512)
