@@ -656,14 +656,17 @@ class LeggedEnv(gym.Env):
         # Reward increases as robot approaches goal
         # self.position_reward = 0.01 / 2**self.normalized_goal_dist
         # Robot is moving
-        self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
-        self.move_reward = min(self.move_reward, 0.1)
+        if self.normalized_base_lin_vel[0] > 0:
+            self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
+            self.move_reward = min(self.move_reward, 0.10) #0.1
+        else:
+            self.move_reward = -0.25
         # self.move_reward = max(1, self.move_reward)
         # time step penalty
         # time_step_penalty = -0.005
 
         # alive reward
-        alive_reward = 0.05
+        alive_reward = 0.25 #0.45 #0.25 #0.05
 
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
@@ -708,7 +711,7 @@ class LeggedEnv(gym.Env):
         """
         
         def is_same_direction(a, b):
-            if ((a <= 0 and b <= 0) or (a >= 0 and b >= 0)):
+            if ((a < 0 and b < 0) or (a > 0 and b > 0)):
                 return True
             return False
         same_leg_reward = 0
@@ -791,14 +794,14 @@ class LeggedEnv(gym.Env):
         # if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
         #     is_unrecoverable = True
         #     # print("height too low")
-        # Torso of robot touches ground
-        if (len(contact_points) > 0):
-            is_unrecoverable = True
-            # print("touch ground")
-        # Torso of robot is very close to ground
-        if (len(closest_points) > 0):
-            is_unrecoverable = True
-            # print("too close to ground")
+        # # Torso of robot touches ground
+        # if (len(contact_points) > 0):
+        #     is_unrecoverable = True
+        #     # print("touch ground")
+        # # Torso of robot is very close to ground
+        # if (len(closest_points) > 0):
+        #     is_unrecoverable = True
+        #     # print("too close to ground")
         # Pitch and Roll is too large
         if (abs(pitch) > math.radians(40) or abs(roll) > math.radians(40)):
             is_unrecoverable = True

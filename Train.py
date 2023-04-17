@@ -28,7 +28,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 20000
+          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 40000
           ):
     """
     Trains the agent and logs the training process onto tensorboard
@@ -359,4 +359,16 @@ if __name__ == "__main__":
     # apply same leg rewards only to upper legs
     #Train("SAC", num_timesteps=1e6, training_name='test31', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
     # remove contact forces
-    Train("SAC", num_timesteps=1e6, training_name='test32', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #Train("SAC", num_timesteps=1e6, training_name='test32', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # add back contact forces, increase alive reward to 0.25
+    #Train("SAC", num_timesteps=1e6, training_name='test33', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # exclude 0 from leg reward
+    #Train("SAC", num_timesteps=1e6, training_name='test34', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # increase alive reward to 0.45 from 0.25
+    #Train("SAC", num_timesteps=1e6, training_name='test35', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # increase vel reward to 0.2, reduce alive reward back tp 0.25
+    #Train("SAC", num_timesteps=1e6, training_name='test36', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # reduce vel reward to 0.1, introduce penalty for not moving / negative vel
+    #Train("SAC", num_timesteps=1e6, training_name='test37', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # removed termination condition for too low / touch ground
+    Train("SAC", num_timesteps=1e6, training_name='test38', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
