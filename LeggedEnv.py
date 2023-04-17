@@ -673,7 +673,7 @@ class LeggedEnv(gym.Env):
             self.goal_reward = 0
         # Robot is moving towards goal - Position
         # self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
-        self.position_reward = -0.75 * self.xyz_obj_dist_to_goal()
+        self.position_reward = -0.05 * self.xyz_obj_dist_to_goal()
         # if self.xyz_obj_dist_to_goal() >= self.prev_dist:
         #     self.position_reward = -0.1
         # Reward increases as robot approaches goal
@@ -760,6 +760,9 @@ class LeggedEnv(gym.Env):
         # Penalise staying in same place
         # Penalise sudden joint accelerations
         # Ensure that joint angles don't deviate too much
+        
+        # Sum of all rewards
+        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward + self.move_reward)
 
         # print("roll penalty:", roll_penalty)
         # print("pitch penalty:", pitch_penalty)
@@ -767,9 +770,6 @@ class LeggedEnv(gym.Env):
         # print("move_reward:", self.move_reward)
         # print("position_reward:", self.position_reward)
         # print("self.goal_reward:", self.goal_reward)
-        
-        # Sum of all rewards
-        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward)
         # print("total reward:", reward)
         return reward
     

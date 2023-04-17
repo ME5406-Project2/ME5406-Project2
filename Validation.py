@@ -68,5 +68,7 @@ if __name__ == "__main__":
     #Validation("SAC", "./trained_models/test3/test3_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test4/test4_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test4/best_model/best_model.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/test5/test5_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test5/test5_1000000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/test5/best_model/best_model.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/test6/test6_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test6/best_model/best_model.zip", eval_eps=1)
