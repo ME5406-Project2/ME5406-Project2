@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 1300
+        self.max_steps = 2500
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -53,6 +53,9 @@ class LeggedEnv(gym.Env):
 
         self.prev_contact_pos = None
         self.stride_length = 0
+
+        # Contact distance between front left leg and terrain
+        self.contact_dist = 0
 
         # Define joint-to-action mapping
         # self.joint_to_action_map = {
@@ -100,15 +103,20 @@ class LeggedEnv(gym.Env):
         # }
 
         # Control parameters
+        # self.joint_to_action_map = {
+        #     0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FL Frequency
+        #     1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FL Amplitude
+        #     2: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FR Frequency
+        #     3: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FR Amplitude
+        #     4: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BL Frequency
+        #     5: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BL Amplitude
+        #     6: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BR Frequency
+        #     7: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BR Amplitude
+        # }
+
         self.joint_to_action_map = {
-            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FL Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FL Amplitude
-            1: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FR Frequency
-            2: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FR Amplitude
-            3: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BL Frequency
-            4: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BL Amplitude
-            5: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BR Frequency
-            6: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BR Amplitude
+            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -125,7 +133,7 @@ class LeggedEnv(gym.Env):
 
         # Load surface that the robot will walk on
         self.surface = Surface(
-            texture_path="wood.png",
+            texture_path="grass.jpeg",
             lateral_friction=1.0,
             spinning_friction=1.0,
             rolling_friction=0.0)
@@ -222,7 +230,7 @@ class LeggedEnv(gym.Env):
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
     def reset(self):
-        
+
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -234,7 +242,7 @@ class LeggedEnv(gym.Env):
 
         # Load surface that the robot will walk on
         self.surface = Surface(
-            texture_path="wood.png",
+            texture_path="grass.jpeg",
             lateral_friction=1.0,
             spinning_friction=1.0,
             rolling_friction=0.0)
@@ -271,7 +279,7 @@ class LeggedEnv(gym.Env):
         for control_param, index in enumerate(action):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
-        cmd_joint_pos = self.cpg_position_controller_decoupled(timestep, control_params)
+        cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
 
         # Crawl gait position control
         # joint_positions = []
@@ -350,11 +358,11 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [2.5, -0.25, 0]
+        box_pos = [5.5, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
-                                                          halfExtents=[0.1, 0.1, 0.1])
+                                                          halfExtents=[0.1, 0.1, 0.2])
         
         self.goal_id = p.createMultiBody(baseMass=1,
                                         baseCollisionShapeIndex=self.box_collision_shape,
@@ -372,38 +380,59 @@ class LeggedEnv(gym.Env):
             0, #back right upper
             0  #back right lower
         ]
+
+        self.generate_terrain()
         
-        # create a collision shape for the triangular block
-        # half_size = [2, 2, 0.07]
-        # block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
+    def generate_terrain(self):
+        # create a collision shape for the mud
+        half_size = [2, 2, 0.15]
+        block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
-        # # create a multi-body object for the triangular block
-        # block_position = [4, 0, 0]
-        # block_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        # block_body = p.createMultiBody(
-        #     baseMass=0,
-        #     baseCollisionShapeIndex=block_shape,
-        #     basePosition=block_position,
-        #     baseOrientation=block_orientation,
-        # )
+        # create a multi-body object for the triangular block
+        block_position = [4, 0, 0]
+        block_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        self.mud = p.createMultiBody(
+            baseMass=0,
+            baseCollisionShapeIndex=block_shape,
+            basePosition=block_position,
+            baseOrientation=block_orientation,
+        )
 
-        # p.changeVisualShape(block_body, -1, rgbaColor=[101/255, 67/255, 33/255, 1])
-        # light_direction = [1, 1, 1]  # Direction of the light
-        # light_color = [1, 1, 1]  # Color of the light (white)
-        # light_id = p.addUserDebugParameter("light", -1, 1, 0)
-        # p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
-        # p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
+        p.changeVisualShape(self.mud, -1, rgbaColor=[101/255, 67/255, 33/255, 1])
+        light_direction = [1, 1, 1]  # Direction of the light
+        light_color = [1, 1, 1]  # Color of the light (white)
+        light_id = p.addUserDebugParameter("light", -1, 1, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
 
-        # p.changeDynamics(
-        #     block_body, -1,
-        #     contactStiffness=0.01,
-        #     contactDamping=1.0,
-        #     restitution=10.0,
-        #     lateralFriction=1000.0,
-        #     rollingFriction=1000.0,
-        #     spinningFriction=1000.0,
-        #     frictionAnchor=True,
-        #     anisotropicFriction=[1.0, 0.05, 0.05])
+        p.changeDynamics(
+            self.mud, -1,
+            contactStiffness=0.01,
+            contactDamping=1.0,
+            restitution=10.0,
+            lateralFriction=1000.0,
+            rollingFriction=1000.0,
+            spinningFriction=1000.0,
+            frictionAnchor=True,
+            anisotropicFriction=[1.0, 0.05, 0.05])
+        
+
+    # Check if robot legs contacting the terrain
+    def check_robot_legs_in_mud(self):
+        # Link IDs of the end-effectors
+        # Respectively: FL, FR, BL, BR
+        foot_link_ids = [1, 3, 5, 7]
+        foot_contacts = [False] * 4
+
+        for i, foot_id in enumerate(foot_link_ids):
+            contact_points = p.getContactPoints(bodyA=self.robot, 
+                                                bodyB=self.mud, 
+                                                linkIndexA=foot_id)
+            if (len(contact_points)) != 0:
+                if foot_id == 1:
+                    self.contact_dist = contact_points[0][8]
+            else:
+                self.contact_dist = 0
     
     def cpg_position_controller_decoupled(self, t, control_params):
         
@@ -586,6 +615,8 @@ class LeggedEnv(gym.Env):
 
         
     def get_observation(self):
+
+        self.check_robot_legs_in_mud()
         
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
