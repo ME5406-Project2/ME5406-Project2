@@ -618,20 +618,24 @@ class LeggedEnv(gym.Env):
             self.goal_reward = 0
         # Robot is moving towards goal - Position
         # self.position_reward = 100.0 * np.round(self.xyz_obj_dist_to_goal() - self.prev_dist, 3) #10
-        self.position_reward = -math.log(max(self.xyz_obj_dist_to_goal(),0)+1)
+        self.position_reward = -0.5*math.log(max(self.xyz_obj_dist_to_goal(),0)+1)
         # if self.xyz_obj_dist_to_goal() >= self.prev_dist:
         #     self.position_reward = -0.1
         # Reward increases as robot approaches goal
         # self.position_reward = 0.01 / 2**self.normalized_goal_dist
-        # Robot is moving
-        self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
-        self.move_reward = min(self.move_reward, 0.1)
+        # Robot is moving, penalize for not moving
+        if self.normalized_base_lin_vel[0] > 0:
+            self.move_reward = 1.0*self.normalized_base_lin_vel[0] # 10.0 * self.base_lin_vel[0]
+            self.move_reward = min(self.move_reward, 0.25) # 0.1
+        else:
+            self.move_reward = -0.25
+        
         # self.move_reward = max(1, self.move_reward)
         # time step penalty
         # time_step_penalty = -0.005
 
         # alive reward
-        alive_reward = 0.05
+        alive_reward = 0.15 #0.05
 
         dead_penalty = 0
         # robot is deemed to be in an unrecoverable / undesired position
@@ -658,7 +662,8 @@ class LeggedEnv(gym.Env):
         # penalize for too much tilting forward or backwards or sideways
         pitch_penalty = 0
         roll_penalty = 0
-        if abs(pitch) > math.radians(7.5):
+
+        if abs(pitch) > math.radians(7.5): #7.5
             pitch_penalty = -2.5 * pitch**2
         if abs(roll) > math.radians(10):
             roll_penalty = -2.5 * roll**2
@@ -674,26 +679,61 @@ class LeggedEnv(gym.Env):
         6, #back right upper
         7  #back right lower
         """
-        """
-        def is_same_direction(a, b):
-            if ((a <= 0 and b <= 0) or (a >= 0 and b >= 0)):
-                return True
-            return False
-        same_leg_reward = 0
-        # front left upper and back right upper
-        if is_same_direction(self.joint_velocities[0], self.joint_velocities[6]):
-            same_leg_reward += 1
-        # front left lower and back right lower
-        if is_same_direction(self.joint_velocities[1], self.joint_velocities[7]):
-            same_leg_reward += 1
-        # front right upper and back left upper
-        if is_same_direction(self.joint_velocities[2], self.joint_velocities[4]):
-            same_leg_reward += 1
-        # front right lower and back right lower
-        if is_same_direction(self.joint_velocities[3], self.joint_velocities[5]):
-            same_leg_reward += 1
-        same_leg_reward *= 0.05
-        """
+        
+        # def is_same_direction(a, b):
+        #     if ((a < 0 and b < 0) or (a > 0 and b > 0)):
+        #         return True
+        #     return False
+        # same_leg_reward = 0
+        # # front left upper and back right upper
+        # if is_same_direction(self.joint_velocities[0], self.joint_velocities[3]):
+        #     same_leg_reward += 1
+        # # front right upper and back left upper
+        # if is_same_direction(self.joint_velocities[1], self.joint_velocities[2]):
+        #     same_leg_reward += 1
+        # same_leg_reward *= 0.15
+        
+        def is_both_fwd(a, b):
+            return (a < 0 and b < 0)
+        def is_both_bwd(a, b):
+            return (a > 0 and b > 0)
+        
+        # fl, fr, bl, br 
+        EE_pose, _ = self.get_end_effector_pose()
+        
+        # left front, right back
+        dist_flbr = np.linalg.norm(EE_pose[0] - EE_pose[3])
+        # left front, left back
+        dist_flbl = np.linalg.norm(EE_pose[0] - EE_pose[2])
+        # right front, left back
+        dist_frbl = np.linalg.norm(EE_pose[1] - EE_pose[2])
+        # right front, right back
+        dist_frbr = np.linalg.norm(EE_pose[1] - EE_pose[3])
+        # check if the diagonal legs are too close to each other
+        min_dist = 0.45 #0.3
+        legs_are_close = (min(dist_flbl, dist_flbr, dist_frbl, dist_frbr) < min_dist)
+        # check if the diagonal legs are too far from each other
+        max_dist = 0.75 #1
+        legs_are_far = (max(dist_flbl, dist_flbr, dist_frbl, dist_frbr) > max_dist)
+        # print("dist_flbr", dist_flbr)
+        # print("dist_frbl", dist_frbl)
+        # print("dist_flbl", dist_flbl)
+        # print("dist_frbr", dist_frbr)
+        # print("too close", legs_are_close)
+        # print("too far", legs_are_far)
+        
+        gait_reward = 0
+        vel_left_front = self.joint_velocities[0]
+        vel_right_front = self.joint_velocities[1]
+        vel_left_back = self.joint_velocities[2]
+        vel_right_back = self.joint_velocities[3]
+        # front legs move forward and back legs move back and legs are close together
+        if (is_both_fwd(vel_left_front, vel_right_front) and is_both_bwd(vel_left_back, vel_right_back) and legs_are_close):
+            gait_reward = 0.3
+        # front legs move back and back legs move front and legs are far apart
+        elif (is_both_bwd(vel_left_front, vel_right_front) and is_both_fwd(vel_left_back, vel_right_back) and legs_are_far):
+            gait_reward = 0.3
+
         # check if at least 3 feet are on the ground to encourage lifting of legs to walk
         # leg_penalty = 0
         # if self.check_all_feet_on_ground():
@@ -707,8 +747,12 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
         
         # Sum of all rewards
-        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward + self.move_reward)
+        reward = (self.goal_reward + dead_penalty
+                  + pitch_penalty + roll_penalty 
+                  + self.position_reward + gait_reward)
 
+        # print("same leg reward", same_leg_reward)
+        # print("gait reward", gait_reward)
         # print("roll penalty:", roll_penalty)
         # print("pitch penalty:", pitch_penalty)
         # print("alive_reward:", alive_reward)

@@ -295,4 +295,29 @@ def copy_log_file(load_path, dst, algorithm):
 # testing code
 if __name__ == "__main__":
     # removed 1 joint from each leg
-    Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #Train("SAC", num_timesteps=1e6, training_name='test1', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # added same leg reward and increase alive reward
+    #Train("SAC", num_timesteps=1e6, training_name='test2', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # changed leg reward to exclude 0
+    #Train("SAC", num_timesteps=1e6, training_name='test3', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # increase forward velocity reward to 0.25
+    #Train("SAC", num_timesteps=1e6, training_name='test4', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # include penalty for not moving
+    #Train("SAC", num_timesteps=1e6, training_name='test5', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # removed terminal condition for height
+    #Train("SAC", num_timesteps=1e6, training_name='test6', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # updated leg reward to reward for exhibiting galopping gait
+    #Train("SAC", num_timesteps=1e6, training_name='test7', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # improved gait reward
+    #Train("SAC", num_timesteps=1e6, training_name='test8', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # Reduce gait max dist to 0.75 and increase gait min dist to 0.45
+    #Train("SAC", num_timesteps=1e6, training_name='test9', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # fixed the directions for vel
+    #Train("SAC", num_timesteps=1e6, training_name='test10', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # remove allowance for pitch
+    #Train("SAC", num_timesteps=1e6, training_name='test11', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # add dead penalty, remove alive reward
+    #Train("SAC", num_timesteps=1e6, training_name='test12', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # remove vel reward
+    Train("SAC", num_timesteps=1e6, training_name='test13', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+
