@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.max_steps = 1300
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -94,9 +94,15 @@ class LeggedEnv(gym.Env):
         #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
         # }
 
+        # self.joint_to_action_map = {
+        #     0: np.array([0, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30]), # Left
+        #     1: np.array([0, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30]), # Right
+        # }
+
+        # Control parameters
         self.joint_to_action_map = {
-            0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Left
-            1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Right
+            0: np.array([1, 2, 3]), # Frequency
+            1: np.array([0.3, 0.5, 0.7]), # Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -142,6 +148,9 @@ class LeggedEnv(gym.Env):
         # Buffer for history stacking of observations
         self.buffer_size = 4
         self.obs_buffer = np.zeros((self.buffer_size, 30))
+
+        # Robot weight
+        self.weight = self.compute_weight()
         
         # CPG timestep
         self.t = 0
@@ -249,19 +258,27 @@ class LeggedEnv(gym.Env):
         return self.get_observation()
     
     def step(self, action):
+        
+        # CPG controller learning
+        timestep = self.env_step_count+1
+        control_params = []
+        for control_param, index in enumerate(action):
+            param_val  = self.joint_to_action_map[control_param][index]
+            control_params.append(param_val)
+        cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
 
-        # CPG-style position control
-        joint_positions = []
-        # Find the actions based on pre-defined mappings
-        for joint, index in enumerate(action):
-            joint_pos = self.joint_to_action_map[joint][index]
-            joint_positions.append(joint_pos)
-        cmd_joint_pos = []
-        cmd_joint_pos.extend(joint_positions)
-        for joint_pos in joint_positions:
-            negate_joint_pos = joint_pos * -1.0
-            cmd_joint_pos.append(negate_joint_pos)
-
+        # Crawl gait position control
+        # joint_positions = []
+        # # Find the actions based on pre-defined mappings
+        # for joint, index in enumerate(action):
+        #     joint_pos = self.joint_to_action_map[joint][index]
+        #     joint_positions.append(joint_pos)
+        # cmd_joint_pos = []
+        # cmd_joint_pos.extend(joint_positions)
+        # for joint_pos in joint_positions:
+        #     negate_joint_pos = joint_pos * -1.0
+        #     cmd_joint_pos.append(negate_joint_pos)
+        # # print(cmd_joint_pos)
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
                                     p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
@@ -315,26 +332,6 @@ class LeggedEnv(gym.Env):
         self.prev_base_lin_vel = p.getBaseVelocity(self.robot)[0][0]
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
         self.prev_base_pos = p.getBasePositionAndOrientation(self.robot)[0][2]
-
-        # else:
-
-        #     leg_positions = self.cpg_position_controller(self.t)
-        #     p.setJointMotorControlArray(self.robot, self.upper_joint_indeces, 
-        #                                 p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
-        #     p.setJointMotorControlArray(self.robot, self.lower_joint_indeces, 
-        #                                 p.POSITION_CONTROL, targetPositions=leg_positions)
-        #     p.stepSimulation()
-        #     # time.sleep(1/240)
-        #     self.env_step_count += 1
-        #     # Get the observation
-        #     observation = self.get_observation()
-
-        #     reward = 0
-
-        #     self.prev_joint_velocities = self.joint_velocities
-        #     self.t+=1/240
-
-        #     done = False
         
         
         return observation, reward, done, {}
@@ -347,7 +344,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [5.8, -0.25, 0]
+        box_pos = [2.5, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -371,51 +368,51 @@ class LeggedEnv(gym.Env):
         ]
         
         # create a collision shape for the triangular block
-        half_size = [2, 2, 0.04]
-        block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
+        # half_size = [2, 2, 0.07]
+        # block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
-        # create a multi-body object for the triangular block
-        block_position = [4, 0, 0]
-        block_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        block_body = p.createMultiBody(
-            baseMass=0,
-            baseCollisionShapeIndex=block_shape,
-            basePosition=block_position,
-            baseOrientation=block_orientation,
-        )
+        # # create a multi-body object for the triangular block
+        # block_position = [4, 0, 0]
+        # block_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        # block_body = p.createMultiBody(
+        #     baseMass=0,
+        #     baseCollisionShapeIndex=block_shape,
+        #     basePosition=block_position,
+        #     baseOrientation=block_orientation,
+        # )
 
-        p.changeVisualShape(block_body, -1, rgbaColor=[101/255, 67/255, 33/255, 1])
-        light_direction = [1, 1, 1]  # Direction of the light
-        light_color = [1, 1, 1]  # Color of the light (white)
-        light_id = p.addUserDebugParameter("light", -1, 1, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
+        # p.changeVisualShape(block_body, -1, rgbaColor=[101/255, 67/255, 33/255, 1])
+        # light_direction = [1, 1, 1]  # Direction of the light
+        # light_color = [1, 1, 1]  # Color of the light (white)
+        # light_id = p.addUserDebugParameter("light", -1, 1, 0)
+        # p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 0)
+        # p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
 
-        p.changeDynamics(
-            block_body, -1,
-            contactStiffness=0.01,
-            contactDamping=1.0,
-            restitution=10.0,
-            lateralFriction=1000.0,
-            rollingFriction=1000.0,
-            spinningFriction=1000.0,
-            frictionAnchor=True,
-            anisotropicFriction=[1.0, 0.05, 0.05])
+        # p.changeDynamics(
+        #     block_body, -1,
+        #     contactStiffness=0.01,
+        #     contactDamping=1.0,
+        #     restitution=10.0,
+        #     lateralFriction=1000.0,
+        #     rollingFriction=1000.0,
+        #     spinningFriction=1000.0,
+        #     frictionAnchor=True,
+        #     anisotropicFriction=[1.0, 0.05, 0.05])
         
-    def cpg_position_controller(self, t):
+    def cpg_position_controller(self, t, f, amp):
         
         # Set the CPG parameters
-        self.frequency = 3
-        self.amplitude = 0.3
+        self.frequency = f #3 #2 #1 
+        self.amplitude = amp #0.3 #0.5 #0.7
         self.phase_offset = 0.5
 
         # Calculate the CPG output for each leg
         front_left_leg_pos = self.amplitude * np.sin(
             2 * np.pi * self.frequency * t + self.phase_offset)
         front_right_leg_pos = self.amplitude * np.sin(
-            2 * np.pi * self.frequency * t + np.pi / 2 + self.phase_offset)
+            2 * np.pi * self.frequency * t + np.pi / 2 + self.phase_offset) 
         back_left_leg_pos = self.amplitude * np.sin(
-            2 * np.pi * self.frequency * t + np.pi + self.phase_offset)
+            2 * np.pi * self.frequency * t + np.pi + self.phase_offset) 
         back_right_leg_pos = self.amplitude * np.sin(
             2 * np.pi * self.frequency * t + 3 * np.pi / 2 + self.phase_offset)
 
@@ -428,7 +425,9 @@ class LeggedEnv(gym.Env):
         if self.check_no_feet_on_ground():
             self.cpg_cnt+=1
 
-        leg_positions = self.cpg_position_controller(t)
+        freq = 3
+        amp = 0.3
+        leg_positions = self.cpg_position_controller(t, freq, amp)
         print(leg_positions)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
@@ -586,7 +585,7 @@ class LeggedEnv(gym.Env):
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
         self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
-        # print("baselinvel",self.base_lin_vel)
+        print("baselinvel",self.base_lin_vel)
 
         # normalize linear and angular velocities [] -> [-1,1]
         # limits for linear and angular velocity cannot be set in URDF
@@ -668,6 +667,38 @@ class LeggedEnv(gym.Env):
                 
         # print(f"Position{self.base_pos}")
         # print(f"Ornrpy{self.base_rpy}")
+
+
+        # Get contact forces and frictional forces
+        contact_forces = []
+        frictional_forces = []
+        z_force_values = []
+        # Link IDs of the end-effectors
+        # Respectively: FL, FR, BL, BR
+        foot_link_ids = [1, 3, 5, 7]
+        
+        # divide the weight of robot into 4 legs
+        average_force = self.weight / 4
+        for i, foot_id in enumerate(foot_link_ids):
+            contact_points = p.getContactPoints(bodyA=self.robot, 
+                                                bodyB=self.surface.plane_id, 
+                                                linkIndexA=foot_id)
+            if (len(contact_points) == 0):
+                # contact_forces.append(0)
+                # frictional_forces.append(0)
+                contact_forces.append(np.array([0, 0, 0]))
+                z_force_values.append(0)
+            else:
+                # contact_forces.append((contact_points[9] - average_force)/(average_force))
+                # frictional_forces.append(contact_points[10])
+                normal_forces = contact_points[0][7]
+                normal_forces /= np.linalg.norm(normal_forces)
+                contact_forces.append(np.array(normal_forces))
+                z_force_values.append(contact_points[0][9])
+        # flatten contact forces
+        contact_forces = np.concatenate(contact_forces)
+        # print(z_force_values)
+
 
         # Normalised observations
         observation = np.hstack([
@@ -805,6 +836,20 @@ class LeggedEnv(gym.Env):
             is_unrecoverable = True
         return is_unrecoverable
 
+    def compute_weight(self):
+        total_mass = 0
+        base_link_info = p.getDynamicsInfo(self.robot, -1)  # Get dynamics info of base link (-1)
+        base_link_mass = base_link_info[0]
+        total_mass += base_link_mass
+        # Iterate through each link in the robot
+        for link_idx in range(self.num_of_joints):
+            # Get the link's URDF data
+            link_urdf_data = p.getDynamicsInfo(self.robot, link_idx)
+
+            # Get the link's mass
+            link_mass = link_urdf_data[0]
+            total_mass += link_mass
+        return total_mass*9.81
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
