@@ -101,8 +101,14 @@ class LeggedEnv(gym.Env):
 
         # Control parameters
         self.joint_to_action_map = {
-            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # Amplitude
+            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FL Frequency
+            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FL Amplitude
+            1: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FR Frequency
+            2: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FR Amplitude
+            3: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BL Frequency
+            4: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BL Amplitude
+            5: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # BR Frequency
+            6: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BR Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -216,6 +222,7 @@ class LeggedEnv(gym.Env):
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
     def reset(self):
+        
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -264,8 +271,7 @@ class LeggedEnv(gym.Env):
         for control_param, index in enumerate(action):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
-        print(control_params)
-        cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
+        cmd_joint_pos = self.cpg_position_controller_decoupled(timestep, control_params)
 
         # Crawl gait position control
         # joint_positions = []
@@ -398,7 +404,33 @@ class LeggedEnv(gym.Env):
         #     spinningFriction=1000.0,
         #     frictionAnchor=True,
         #     anisotropicFriction=[1.0, 0.05, 0.05])
+    
+    def cpg_position_controller_decoupled(self, t, control_params):
         
+        fl_amplitude = control_params[0]
+        fl_frequency = control_params[1]
+        fr_amplitude = control_params[2]
+        fr_frequency = control_params[3]
+        bl_amplitude = control_params[4]
+        bl_frequency = control_params[5]
+        br_amplitude = control_params[6]
+        br_frequency = control_params[7]
+        self.phase_offset = 0.5
+
+        # Calculate the CPG output for each leg
+        front_left_leg_pos = fl_amplitude * np.sin(
+            2 * np.pi * fl_frequency * t + self.phase_offset)
+        front_right_leg_pos = fr_amplitude * np.sin(
+            2 * np.pi * fr_frequency * t + np.pi / 2 + self.phase_offset) 
+        back_left_leg_pos = bl_amplitude * np.sin(
+            2 * np.pi * bl_frequency * t + np.pi + self.phase_offset) 
+        back_right_leg_pos = br_amplitude * np.sin(
+            2 * np.pi * br_frequency * t + 3 * np.pi / 2 + self.phase_offset)
+
+        # Return the CPG output for all 4 legs
+        return [front_left_leg_pos, front_right_leg_pos, 
+                back_left_leg_pos, back_right_leg_pos]
+    
     def cpg_position_controller(self, t, f, amp):
         
         # Set the CPG parameters
@@ -849,6 +881,8 @@ class LeggedEnv(gym.Env):
             link_mass = link_urdf_data[0]
             total_mass += link_mass
         return total_mass*9.81
+
+
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
