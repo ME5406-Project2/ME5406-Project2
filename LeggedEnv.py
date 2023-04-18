@@ -115,8 +115,8 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Amplitude
+            0: np.array([2, 2.5, 3]), # Frequency
+            1: np.array([0.3, 0.4, 0.5]), # Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -486,8 +486,8 @@ class LeggedEnv(gym.Env):
         if self.check_no_feet_on_ground():
             self.cpg_cnt+=1
 
-        freq = 3
-        amp = 0.3
+        freq = 2
+        amp = 0.6
         leg_positions = self.cpg_position_controller(t, freq, amp)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
@@ -846,15 +846,15 @@ class LeggedEnv(gym.Env):
         # Encourage conservative gait in rough terrain
         if self.contact_dist > 0.0:
             # Reward high amplitude
-            if control_params[0] > 0.5:
+            if control_params[0] > 0.4:
                 gait_reward += 0.005
             # Reward low frequency
-            if control_params[1] < 2.2:
+            if control_params[1] < 2.5:
                 gait_reward += 0.005
         else:
-            if control_params[0] < 0.5:
+            if control_params[0] < 0.4:
                 gait_reward += 0.005
-            if control_params[1] > 2.2:
+            if control_params[1] > 2.5:
                 gait_reward += 0.005
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
