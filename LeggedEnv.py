@@ -115,8 +115,8 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # Amplitude
+            0: np.array([1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -336,7 +336,7 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward()
+        reward = self.get_reward(control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -782,7 +782,7 @@ class LeggedEnv(gym.Env):
         # CoG in robot frame
         return stacked_observations
     
-    def get_reward(self):
+    def get_reward(self, control_params):
         # Goal reached
         # if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
         #     self.goal_reward = 500
@@ -842,6 +842,16 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
 
+        gait_reward = 0
+        # Encourage conservative gait in rough terrain
+        if self.contact_dist > 0.0:
+            # Reward high amplitude
+            if control_params[0] > 0.5:
+                gait_reward += 0.01
+            # Reward low frequency
+            if control_params[1] < 2.2:
+                gait_reward += 0.01
+            
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
@@ -851,7 +861,7 @@ class LeggedEnv(gym.Env):
 
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
-        reward = -self.position_reward  + pitch_penalty + roll_penalty + alive_reward
+        reward = -self.position_reward  + pitch_penalty + roll_penalty + alive_reward + gait_reward
         return reward
     
     def process_and_cmd_vel(self):
