@@ -101,8 +101,8 @@ class LeggedEnv(gym.Env):
 
         # Control parameters
         self.joint_to_action_map = {
-            0: np.array([2, 3]), # Frequency
-            1: np.array([0.3, 0.5, 0.7]), # Amplitude
+            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -216,7 +216,6 @@ class LeggedEnv(gym.Env):
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
     def reset(self):
-
         self.reward = 0
         self.env_step_count = 0
         # Reset simulation
@@ -265,6 +264,7 @@ class LeggedEnv(gym.Env):
         for control_param, index in enumerate(action):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
+        print(control_params)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
 
         # Crawl gait position control
