@@ -693,8 +693,8 @@ class LeggedEnv(gym.Env):
         # penalize for too much tilting forward or backwards or sideways
         pitch_penalty = 0
         roll_penalty = 0
-        if abs(pitch) > math.radians(7.5):
-            pitch_penalty = -2.5 * pitch**2
+        # if abs(pitch) > math.radians(7.5):
+        pitch_penalty = -2.5 * pitch**2
         if abs(roll) > math.radians(10):
             roll_penalty = -2.5 * roll**2
         
@@ -710,25 +710,72 @@ class LeggedEnv(gym.Env):
         7  #back right lower
         """
         
-        def is_same_direction(a, b):
-            if ((a < 0 and b < 0) or (a > 0 and b > 0)):
-                return True
-            return False
-        same_leg_reward = 0
-        # front left upper and back right upper
-        if is_same_direction(self.joint_velocities[0], self.joint_velocities[6]):
-            same_leg_reward += 1
-        # front left lower and back right lower
-        if is_same_direction(self.joint_velocities[1], self.joint_velocities[7]):
-            same_leg_reward += 1
-        # front right upper and back left upper
-        if is_same_direction(self.joint_velocities[2], self.joint_velocities[4]):
-            same_leg_reward += 1
-        # front right lower and back right lower
-        if is_same_direction(self.joint_velocities[3], self.joint_velocities[5]):
-            same_leg_reward += 1
-        same_leg_reward *= 0.05
+        # def is_same_direction(a, b):
+        #     if ((a < 0 and b < 0) or (a > 0 and b > 0)):
+        #         return True
+        #     return False
+        # same_leg_reward = 0
+        # # front left upper and back right upper
+        # if is_same_direction(self.joint_velocities[0], self.joint_velocities[6]):
+        #     same_leg_reward += 1
+        # # front left lower and back right lower
+        # if is_same_direction(self.joint_velocities[1], self.joint_velocities[7]):
+        #     same_leg_reward += 1
+        # # front right upper and back left upper
+        # if is_same_direction(self.joint_velocities[2], self.joint_velocities[4]):
+        #     same_leg_reward += 1
+        # # front right lower and back right lower
+        # if is_same_direction(self.joint_velocities[3], self.joint_velocities[5]):
+        #     same_leg_reward += 1
+        # same_leg_reward *= 0.05
+        # fl, fr, bl, br 
+        EE_pose, _ = self.get_end_effector_pose()
         
+        # left front, right back
+        dist_flbr = np.linalg.norm(EE_pose[0] - EE_pose[3])
+        # left front, left back
+        dist_flbl = np.linalg.norm(EE_pose[0] - EE_pose[2])
+        # right front, left back
+        dist_frbl = np.linalg.norm(EE_pose[1] - EE_pose[2])
+        # right front, right back
+        dist_frbr = np.linalg.norm(EE_pose[1] - EE_pose[3])
+        # check if the diagonal legs are too close to each other
+        min_dist = 0.65
+        legs_are_close = (min(dist_flbl, dist_flbr, dist_frbl, dist_frbr) < min_dist)
+        # check if the diagonal legs are too far from each other
+        max_dist = 0.75
+        legs_are_far = (max(dist_flbl, dist_flbr, dist_frbl, dist_frbr) > max_dist)
+        # print("dist_flbr", dist_flbr)
+        # print("dist_frbl", dist_frbl)
+        # print("dist_flbl", dist_flbl)
+        # print("dist_frbr", dist_frbr)
+        # print("too close", legs_are_close)
+        # print("too far", legs_are_far)
+
+        gait_reward = 0
+        def is_both_fwd(a, b):
+            return (a < 0 and b < 0)
+        def is_both_bwd(a, b):
+            return (a > 0 and b > 0)
+        # only considet the upper limbs
+        vel_lfu = self.joint_velocities[0] # left front upper
+        vel_rfu = self.joint_velocities[2] # right front upper
+        vel_lbu = self.joint_velocities[4] # left back upper
+        vel_rbu = self.joint_velocities[6] # right back upper
+        vel_lfl = self.joint_velocities[1] # left front lower
+        vel_rfl = self.joint_velocities[3] # right front lower
+        vel_lbl = self.joint_velocities[5] # left back lower
+        vel_rbl = self.joint_velocities[7] # right back lower
+        # front legs move forward and back legs move back and legs are too close
+        if (is_both_fwd(vel_lfu, vel_rfu) and is_both_bwd(vel_lbu, vel_rbu) and
+            is_both_fwd(vel_lfl, vel_rfl) and is_both_bwd(vel_lbl, vel_rbl) and legs_are_close):
+            gait_reward = 0.3
+        # front legs move back and back legs move front and legs are too far
+        elif (is_both_bwd(vel_lfu, vel_rfu) and is_both_fwd(vel_lbu, vel_rbu) and
+            is_both_bwd(vel_lfl, vel_rfl) and is_both_fwd(vel_lbl, vel_rbl) and legs_are_far):
+            gait_reward = 0.3
+
+
         # check if at least 3 feet are on the ground to encourage lifting of legs to walk
         # leg_penalty = 0
         # if self.check_all_feet_on_ground():
@@ -742,9 +789,10 @@ class LeggedEnv(gym.Env):
         # Ensure that joint angles don't deviate too much
         
         # Sum of all rewards
-        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward + self.move_reward + same_leg_reward)
+        reward = (self.goal_reward + alive_reward + pitch_penalty + roll_penalty + self.position_reward + self.move_reward + gait_reward)
 
         # print("same leg reward", same_leg_reward)
+        # print("gait reward, gait_reward")
         # print("roll penalty:", roll_penalty)
         # print("pitch penalty:", pitch_penalty)
         # print("alive_reward:", alive_reward)
@@ -794,14 +842,14 @@ class LeggedEnv(gym.Env):
         # if (self.normalized_base_height < -0.8 and not -0.01 <= self.normalized_base_height <= 0.01):
         #     is_unrecoverable = True
         #     # print("height too low")
-        # # Torso of robot touches ground
-        # if (len(contact_points) > 0):
-        #     is_unrecoverable = True
-        #     # print("touch ground")
-        # # Torso of robot is very close to ground
-        # if (len(closest_points) > 0):
-        #     is_unrecoverable = True
-        #     # print("too close to ground")
+        # Torso of robot touches ground
+        if (len(contact_points) > 0):
+            is_unrecoverable = True
+            # print("touch ground")
+        # Torso of robot is very close to ground
+        if (len(closest_points) > 0):
+            is_unrecoverable = True
+            # print("too close to ground")
         # Pitch and Roll is too large
         if (abs(pitch) > math.radians(40) or abs(roll) > math.radians(40)):
             is_unrecoverable = True

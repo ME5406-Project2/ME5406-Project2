@@ -371,4 +371,16 @@ if __name__ == "__main__":
     # reduce vel reward to 0.1, introduce penalty for not moving / negative vel
     #Train("SAC", num_timesteps=1e6, training_name='test37', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
     # removed termination condition for too low / touch ground
-    Train("SAC", num_timesteps=1e6, training_name='test38', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #Train("SAC", num_timesteps=1e6, training_name='test38', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #Added reward to encourage gait like behaviour to replace leg reward
+    #Train("SAC", num_timesteps=1e6, training_name='test39', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # improved gait rewards
+    #Train("SAC", num_timesteps=1e6, training_name='test40', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # Add back termination conditions, added conditions for gait and lowered limits
+    #Train("SAC", num_timesteps=1e6, training_name='test41', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # fixed bugs in direction
+    #Train("SAC", num_timesteps=1e6, training_name='test42', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    # increase lower limit
+    #Train("SAC", num_timesteps=1e6, training_name='test43', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
+    #increase pitch penalty
+    Train("SAC", num_timesteps=1e6, training_name='test44', num_vectorized_env=25, use_LSTM=True, learning_rate=0.01, batch_size=512)
