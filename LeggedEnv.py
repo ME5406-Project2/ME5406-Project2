@@ -101,7 +101,7 @@ class LeggedEnv(gym.Env):
 
         # Control parameters
         self.joint_to_action_map = {
-            0: np.array([1, 2, 3]), # Frequency
+            0: np.array([2, 3]), # Frequency
             1: np.array([0.3, 0.5, 0.7]), # Amplitude
         }
 
@@ -260,7 +260,7 @@ class LeggedEnv(gym.Env):
     def step(self, action):
         
         # CPG controller learning
-        timestep = self.env_step_count+1
+        timestep = (self.env_step_count+1) * (1/240)
         control_params = []
         for control_param, index in enumerate(action):
             param_val  = self.joint_to_action_map[control_param][index]
@@ -428,7 +428,6 @@ class LeggedEnv(gym.Env):
         freq = 3
         amp = 0.3
         leg_positions = self.cpg_position_controller(t, freq, amp)
-        print(leg_positions)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
         observation = self.get_observation()
@@ -585,7 +584,7 @@ class LeggedEnv(gym.Env):
         # Linear and Angular velocity of the robot
         self.base_lin_vel = np.array(p.getBaseVelocity(self.robot)[0])
         self.base_ang_vel = np.array(p.getBaseVelocity(self.robot)[1])
-        print("baselinvel",self.base_lin_vel)
+        # print("baselinvel",self.base_lin_vel)
 
         # normalize linear and angular velocities [] -> [-1,1]
         # limits for linear and angular velocity cannot be set in URDF
