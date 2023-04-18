@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.max_steps = 3000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -133,7 +133,7 @@ class LeggedEnv(gym.Env):
 
         # Load surface that the robot will walk on
         self.surface = Surface(
-            texture_path="grass.jpeg",
+            texture_path="wood.png",
             lateral_friction=1.0,
             spinning_friction=1.0,
             rolling_friction=0.0)
@@ -242,7 +242,7 @@ class LeggedEnv(gym.Env):
 
         # Load surface that the robot will walk on
         self.surface = Surface(
-            texture_path="grass.jpeg",
+            texture_path="wood.png",
             lateral_friction=1.0,
             spinning_friction=1.0,
             rolling_friction=0.0)
@@ -280,7 +280,7 @@ class LeggedEnv(gym.Env):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
-
+        print(control_params)
         # Crawl gait position control
         # joint_positions = []
         # # Find the actions based on pre-defined mappings
@@ -535,7 +535,7 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward()
+        reward = self.get_reward([0,0])
         self.reward += reward
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
@@ -847,11 +847,15 @@ class LeggedEnv(gym.Env):
         if self.contact_dist > 0.0:
             # Reward high amplitude
             if control_params[0] > 0.5:
-                gait_reward += 0.01
+                gait_reward += 0.005
             # Reward low frequency
             if control_params[1] < 2.2:
-                gait_reward += 0.01
-            
+                gait_reward += 0.005
+        else:
+            if control_params[0] < 0.5:
+                gait_reward += 0.005
+            if control_params[1] > 2.2:
+                gait_reward += 0.005
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
