@@ -427,6 +427,8 @@ class LeggedEnv(gym.Env):
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
         in_mud = False
+        force = [0, 0, -50]
+        EE_pose, _ = self.get_end_effector_pose()
         for i, foot_id in enumerate(foot_link_ids):
             contact_points = p.getContactPoints(bodyA=self.robot, 
                                                 bodyB=self.mud, 
@@ -435,6 +437,7 @@ class LeggedEnv(gym.Env):
                 if foot_id == 1:
                     self.contact_dist = contact_points[0][8]
                 in_mud = True
+                p.applyExternalForce(self.robot, foot_id, force, EE_pose[i], p.WORLD_FRAME)
             else:
                 self.contact_dist = 0
         return in_mud
