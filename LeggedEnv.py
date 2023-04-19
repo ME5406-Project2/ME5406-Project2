@@ -818,24 +818,25 @@ class LeggedEnv(gym.Env):
         # Stepped into higher terrrain
         if self.contact_dist > 0.0:
             # Reward higher amplitude
-            if 0.4 <= amplitude <= 0.45:
-                gait_reward += 0.05
-            elif amplitude > 0.45:
-                gait_reward += 0.1
+            if amplitude > 0.4:
+                gait_reward += 0.2
+            elif amplitude <= 0.35:
+                gait_reward -= 0.1
             # Reward lower frequency
-            if 2.3 <= frequency <= 2.5:
-                gait_reward += 0.05
-            elif frequency < 2.3:
-                gait_reward += 0.1
+            if frequency < 2.3:
+                gait_reward += 0.2
+            elif frequency > 2.8:
+                gait_reward -= 0.1
         else:
             # Reward lower amplitude
             if amplitude <= 0.35:
-                gait_reward += 0.05
-            # Reward higher frequency
-            if 2.6 <= frequency <= 2.8:
-                gait_reward += 0.05
-            elif frequency > 2.8:
-                gait_reward += 0.1
+                gait_reward += 0.2
+            elif amplitude > 0.4:
+                gait_reward -= 0.2
+            if frequency > 2.8:
+                gait_reward += 0.2
+            elif frequency < 2.3:
+                gait_reward -= 0.1
 
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
