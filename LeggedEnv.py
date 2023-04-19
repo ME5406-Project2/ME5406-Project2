@@ -296,7 +296,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
-        print(self.contact_dist, control_params)
+        # print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -816,28 +816,27 @@ class LeggedEnv(gym.Env):
         frequency = control_params[0]
         amplitude = control_params[1]
         # Stepped into higher terrrain
-        if self.contact_dist > 0.0:
+        if abs(self.contact_dist) > 0.0:
             # Reward higher amplitude
             if amplitude > 0.4:
-                gait_reward += 0.2
+                gait_reward += 0.4
             elif amplitude <= 0.35:
-                gait_reward -= 0.1
+                gait_reward -= 0.6
             # Reward lower frequency
             if frequency < 2.3:
-                gait_reward += 0.2
+                gait_reward += 0.4
             elif frequency > 2.8:
-                gait_reward -= 0.1
-        else:
-            # Reward lower amplitude
-            if amplitude <= 0.35:
-                gait_reward += 0.2
-            elif amplitude > 0.4:
-                gait_reward -= 0.2
-            if frequency > 2.8:
-                gait_reward += 0.2
-            elif frequency < 2.3:
-                gait_reward -= 0.1
-
+                gait_reward -= 0.6
+        # else:
+        #     # Reward lower amplitude
+        #     if amplitude <= 0.35:
+        #         gait_reward += 0.2
+        #     elif amplitude > 0.4:
+        #         gait_reward -= 0.2
+        #     if frequency > 2.8:
+        #         gait_reward += 0.2
+        #     elif frequency < 2.3:
+        #         gait_reward -= 0.1
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
@@ -848,6 +847,7 @@ class LeggedEnv(gym.Env):
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
         reward = -self.position_reward  + pitch_penalty + roll_penalty + alive_reward + gait_reward
+
         return reward
     
     def process_and_cmd_vel(self):
