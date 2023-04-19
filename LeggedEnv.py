@@ -114,9 +114,15 @@ class LeggedEnv(gym.Env):
         #     7: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BR Amplitude
         # }
 
+        # self.joint_to_action_map = {
+        #     0: np.array([1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]), # Frequency
+        #     1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]), # Amplitude
+        # }
         self.joint_to_action_map = {
-            0: np.array([1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]), # Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]), # Amplitude
+            0: np.array([2, 2.25, 2.5, 2.75, 3]), # Left Frequency
+            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Left Amplitude
+            2: np.array([2, 2.25, 2.5, 2.75, 3]), # Right Frequency
+            3: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Right Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -279,7 +285,8 @@ class LeggedEnv(gym.Env):
         for control_param, index in enumerate(action):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
-        cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
+        #cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
+        cmd_joint_pos = self.cpg_position_controller_half_decoupled(timestep, control_params)
         # print(control_params)
         # Crawl gait position control
         # joint_positions = []
@@ -307,6 +314,8 @@ class LeggedEnv(gym.Env):
         #                             p.VELOCITY_CONTROL, targetVelocities=joint_velocities)
         
         # self.store_joint_vel.append(joint_velocities)
+        
+        self.check_robot_legs_in_mud()
         
         # Step the simulation
         p.stepSimulation()
@@ -464,6 +473,27 @@ class LeggedEnv(gym.Env):
         return [front_left_leg_pos, front_right_leg_pos, 
                 back_left_leg_pos, back_right_leg_pos]
     
+    def cpg_position_controller_half_decoupled(self, t, control_params):
+        l_amplitude = control_params[0]
+        l_frequency = control_params[1]
+        r_amplitude = control_params[2]
+        r_frequency = control_params[3]
+        self.phase_offset = 0
+
+        # Calculate the CPG output for each leg
+        front_left_leg_pos = l_amplitude * np.sin(
+            2 * np.pi * l_frequency * t + self.phase_offset)
+        front_right_leg_pos = r_amplitude * np.sin(
+            2 * np.pi * r_frequency * t + np.pi / 2 + self.phase_offset) 
+        back_left_leg_pos = l_amplitude * np.sin(
+            2 * np.pi * l_frequency * t + np.pi / 2 + self.phase_offset) 
+        back_right_leg_pos = r_amplitude * np.sin(
+            2 * np.pi * r_frequency * t + self.phase_offset)
+
+        # Return the CPG output for all 4 legs
+        return [front_left_leg_pos, front_right_leg_pos, 
+                back_left_leg_pos, back_right_leg_pos]
+
     def cpg_position_controller(self, t, f, amp):
         
         # Set the CPG parameters
@@ -618,10 +648,7 @@ class LeggedEnv(gym.Env):
         return self.stride_length
 
         
-    def get_observation(self):
-
-        self.check_robot_legs_in_mud()
-        
+    def get_observation(self):        
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
