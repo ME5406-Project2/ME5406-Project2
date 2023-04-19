@@ -295,7 +295,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
-        print(control_params)
+        print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -347,8 +347,8 @@ class LeggedEnv(gym.Env):
         half_size = [2, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
-        # create a multi-body object for the triangular block
-        block_position = [4, 0, 0]
+        # create a multi-body object for the mud
+        block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
