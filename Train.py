@@ -162,7 +162,8 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         else:
             model = SAC(policy=policy, env=env, verbose=verbose,
                         learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
-                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path,
+                        target_update_interval=100)
 
     # elif (algorithm=="TRPO"):
     #     policy = "MlpPolicy"
@@ -314,5 +315,13 @@ if __name__ == "__main__":
     #Train("SAC", num_timesteps=1e6, training_name='test6', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
     # Increase cmd reward to 0.15 from 0.05
     #Train("SAC", num_timesteps=1e6, training_name='test7', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
-    # randomize goal position introduced penalties for cmd rwd
-    Train("SAC", num_timesteps=1e6, training_name='test8', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # randomize mud position introduced penalties for gait rwd
+    #Train("SAC", num_timesteps=1e6, training_name='test8', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # remove gait reward and added mud force
+    #Train("SAC", num_timesteps=1e6, training_name='test9', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # reduce mud force, increase timesteps
+    #Train("SAC", num_timesteps=1e6, training_name='test10', learning_rate=0.01, num_vectorized_env=40, use_LSTM=True)
+    #limit the angular penalties
+    #Train("SAC", num_timesteps=1e6, training_name='test11', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    #limit increase vel reward (0.2 - 0.5) and heading penaly to -1 from -0.5 
+    Train("SAC", num_timesteps=1e6, training_name='test12', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)

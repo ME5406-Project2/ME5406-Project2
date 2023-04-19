@@ -33,7 +33,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.max_steps = 5000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -281,7 +281,7 @@ class LeggedEnv(gym.Env):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
-        # print(control_params)
+        print(control_params)
         # Crawl gait position control
         # joint_positions = []
         # # Find the actions based on pre-defined mappings
@@ -427,7 +427,7 @@ class LeggedEnv(gym.Env):
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
         in_mud = False
-        force = [0, 0, -50]
+        force = [0, 0, -15]
         EE_pose, _ = self.get_end_effector_pose()
         for i, foot_id in enumerate(foot_link_ids):
             contact_points = p.getContactPoints(bodyA=self.robot, 
@@ -830,7 +830,7 @@ class LeggedEnv(gym.Env):
         # Robot is moving 
         # self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
         self.move_reward = 1.0 * self.normalized_base_lin_vel[0]
-        self.move_reward = min(self.move_reward, 0.2)
+        self.move_reward = min(self.move_reward, 0.5)
         # Penalise work done
         # Get the joint states for the current and next states
         # current_joint_states = p.getJointStates(self.robot, self.actuators)
@@ -883,7 +883,10 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
         heading_penalty = - 1.5 * heading_error**2
-        
+        pitch_penalty = max(-0.5, pitch_penalty)
+        roll_penalty = max(-0.5, roll_penalty)
+        heading_penalty = max(-1, heading_penalty)
+
         gait_reward = 0
         # Encourage conservative gait in rough terrain
         if self.check_robot_legs_in_mud(): #self.contact_dist > 0.0:
@@ -922,7 +925,7 @@ class LeggedEnv(gym.Env):
 
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
-        reward = -self.position_reward  + pitch_penalty + roll_penalty + heading_penalty + alive_reward + gait_reward + self.move_reward
+        reward = -self.position_reward  + pitch_penalty + roll_penalty + heading_penalty + alive_reward + self.move_reward #+ gait_reward
         return reward
     
     def process_and_cmd_vel(self):
