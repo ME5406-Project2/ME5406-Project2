@@ -285,9 +285,9 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             done = True
-        elif self.check_is_unrecoverable():
-            done = True
-            self.is_dead = True
+        # elif self.check_is_unrecoverable():
+        #     done = True
+        #     self.is_dead = True
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
@@ -295,6 +295,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
+        print(control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -814,27 +815,23 @@ class LeggedEnv(gym.Env):
         if self.contact_dist > 0.0:
             # Reward higher amplitude
             if 0.4 <= amplitude <= 0.45:
-                gait_reward += 0.025
-            elif amplitude > 0.45:
                 gait_reward += 0.05
+            elif amplitude > 0.45:
+                gait_reward += 0.1
             # Reward lower frequency
             if 2.3 <= frequency <= 2.5:
-                gait_reward += 0.025
-            elif 2.1 < frequency < 2.3:
-                gait_reward += 0.04
-            elif frequency == 2:
                 gait_reward += 0.05
+            elif frequency < 2.3:
+                gait_reward += 0.1
         else:
             # Reward lower amplitude
-            if amplitude == 0.35:
-                gait_reward += 0.025
-            elif amplitude < 0.35:
+            if amplitude <= 0.35:
                 gait_reward += 0.05
             # Reward higher frequency
             if 2.6 <= frequency <= 2.8:
-                gait_reward += 0.025
-            elif frequency > 2.8:
                 gait_reward += 0.05
+            elif frequency > 2.8:
+                gait_reward += 0.1
 
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
