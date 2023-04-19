@@ -1,4 +1,5 @@
 import math
+import random
 import gym
 import pybullet as p
 import pybullet_data
@@ -32,7 +33,7 @@ class LeggedEnv(gym.Env):
 
         # Termination condition parameter
         self.termination_pos_dist = 0.5
-        self.max_steps = 2500
+        self.max_steps = 5000
         self.env_step_count = 0
         self.prev_dist = 0
         self.move_reward = 0
@@ -299,7 +300,7 @@ class LeggedEnv(gym.Env):
         # for joint_pos in joint_positions:
         #     negate_joint_pos = joint_pos * -1.0
         #     cmd_joint_pos.append(negate_joint_pos)
-        # # print(cmd_joint_pos)
+        # print(cmd_joint_pos)
         p.setJointMotorControlArray(self.robot, self.upper_joint_indeces,
                                     p.POSITION_CONTROL, targetPositions=-np.array(cmd_joint_pos))
         p.setJointMotorControlArray(self.robot, self.lower_joint_indeces,
@@ -341,6 +342,9 @@ class LeggedEnv(gym.Env):
             self.is_dead = True
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
+            done = True
+        # Robot passed the goal
+        elif self.base_pos[0] > self.goal_pos[0] + 1:
             done = True
         else:
             done = False
@@ -396,9 +400,9 @@ class LeggedEnv(gym.Env):
         # create a collision shape for the mud
         half_size = [1.5, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
-
+        
         # create a multi-body object for the triangular block
-        block_position = [4, 0, 0]
+        block_position = [random.randint(0,5), 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
@@ -432,7 +436,7 @@ class LeggedEnv(gym.Env):
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
         in_mud = False
-        force = [0, 0, -50]
+        force = [0, 0, -15]
         EE_pose, _ = self.get_end_effector_pose()
         for i, foot_id in enumerate(foot_link_ids):
             contact_points = p.getContactPoints(bodyA=self.robot, 
@@ -739,7 +743,13 @@ class LeggedEnv(gym.Env):
         else:
             self.relative_goal_vect = relative_goal_pos / self.relative_goal_dist
         # Normalize relative distance to goal
-        self.relative_goal_dist = self.relative_goal_dist / np.linalg.norm(self.goal_pos)
+        self.relative_goal_dist = self.relative_goal_dist / np.linalg.norm(self.goal_pos - self.robot_start_pos)# - 1
+        # limit to [-1, 1]
+        # if not -1 <= self.relative_goal_dist <= 1:
+        #     if self.relative_goal_dist > 0:
+        #         self.relative_goal_dist = 1
+        #     else:
+        #         self.relative_goal_dist = -1
         
         leg_pos_robot_frame_norm = []
         for leg_pos in self.robot_legs_EE_pos:
@@ -846,8 +856,8 @@ class LeggedEnv(gym.Env):
         self.position_reward = 0.75 * self.xyz_obj_dist_to_goal() / np.linalg.norm(self.goal_pos)
         # Robot is moving 
         # self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
-        # self.move_reward = 1.0 * self.normalized_base_lin_vel[0]
-        # self.move_reward = min(self.move_reward, 0.2)
+        self.move_reward = 1.0 * self.normalized_base_lin_vel[0]
+        self.move_reward = min(self.move_reward, 0.5)
         # Penalise work done
         # Get the joint states for the current and next states
         # current_joint_states = p.getJointStates(self.robot, self.actuators)
@@ -900,22 +910,33 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
         heading_penalty = - 1.5 * heading_error**2
-        
+        pitch_penalty = max(-0.5, pitch_penalty)
+        roll_penalty = max(-0.5, roll_penalty)
+        heading_penalty = max(-1, heading_penalty)
+
         gait_reward = 0
         # Encourage conservative gait in rough terrain
         if self.check_robot_legs_in_mud(): #self.contact_dist > 0.0:
             # print("in mud")
             # Reward high amplitude
             if control_params[1] > 0.4:
-                gait_reward += 0.05
+                gait_reward += 0.15
+            # else:
+            #     gait_reward -= 0.25
             # Reward low frequency
             if control_params[0] < 2.5:
-                gait_reward += 0.05
+                gait_reward += 0.15
+            # else:
+            #     gait_reward -= 0.25
         else:
-            if control_params[1] < 0.4:
-                gait_reward += 0.05
-            if control_params[0] > 2.5:
-                gait_reward += 0.05
+            if control_params[1] <= 0.4:
+                gait_reward += 0.15
+            # else:
+            #     gait_reward -= 0.25
+            if control_params[0] >= 2.5:
+                gait_reward += 0.15
+            # else:
+            #     gait_reward -= 0.25
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
@@ -931,7 +952,7 @@ class LeggedEnv(gym.Env):
 
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
-        reward = -self.position_reward  + pitch_penalty + roll_penalty + heading_penalty + alive_reward + gait_reward
+        reward = -self.position_reward  + pitch_penalty + roll_penalty + heading_penalty + alive_reward + self.move_reward #+ gait_reward
         return reward
     
     def process_and_cmd_vel(self):
