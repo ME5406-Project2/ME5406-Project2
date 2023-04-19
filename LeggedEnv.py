@@ -58,51 +58,15 @@ class LeggedEnv(gym.Env):
         self.contact_dist = 0
 
         # Define joint-to-action mapping
-        # self.joint_to_action_map = {
-        #     0: np.array([-10, -5, 0, 5, 10]),
-        #     1: np.array([-10, -5, 0, 5, 10]),
-        #     2: np.array([-10, -5, 0, 5, 10]),
-        #     3: np.array([-10, -5, 0, 5, 10]),
-        #     4: np.array([-10, -5, 0, 5, 10]),
-        #     5: np.array([-10, -5, 0, 5, 10]),
-        #     6: np.array([-10, -5, 0, 5, 10]),
-        #     7: np.array([-10, -5, 0, 5, 10]),
-        # }
-        # self.joint_to_action_map = {
-        #     0: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     1: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     2: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     3: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     4: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     5: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     6: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        #     7: np.array([-45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 
-        #                  5, 10, 15, 20, 25, 30, 35, 40, 45]),
-        # }         
-        # self.joint_to_action_map = {
-        #     0: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     1: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     2: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     3: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     4: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     5: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     6: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        #     7: np.array([-0.25, -0.20, -0.15, -0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20, 0.25]),
-        # }
 
+        # Joint Position Action Space
         # self.joint_to_action_map = {
         #     0: np.array([0, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30]), # Left
         #     1: np.array([0, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.175, 0.20, 0.225, 0.25, 0.275, 0.30]), # Right
         # }
 
-        # Control parameters
+        # CPG Control Parameters Action Space
+        # Decoupled
         # self.joint_to_action_map = {
         #     0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # FL Frequency
         #     1: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # FL Amplitude
@@ -114,17 +78,11 @@ class LeggedEnv(gym.Env):
         #     7: np.array([0.3, 0.4, 0.5, 0.6, 0.7]), # BR Amplitude
         # }
 
+        # Coupled
         self.joint_to_action_map = {
-            0: np.array([2, 2.5, 3]), # Frequency
-            1: np.array([0.3, 0.4, 0.5]), # Amplitude
+            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
         }
-
-        # self.joint_to_action_map = {
-        #     0: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Left
-        #     1: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Upper Right
-        #     2: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Left
-        #     3: np.array([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]), # Lower Right
-        # }
 
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -280,7 +238,7 @@ class LeggedEnv(gym.Env):
             param_val  = self.joint_to_action_map[control_param][index]
             control_params.append(param_val)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
-        print(control_params)
+
         # Crawl gait position control
         # joint_positions = []
         # # Find the actions based on pre-defined mappings
@@ -310,7 +268,7 @@ class LeggedEnv(gym.Env):
         
         # Step the simulation
         p.stepSimulation()
-        # time.sleep(1/240)
+        time.sleep(1/240)
         self.env_step_count += 1
         
         # Get the observation
@@ -487,7 +445,7 @@ class LeggedEnv(gym.Env):
             self.cpg_cnt+=1
 
         freq = 2
-        amp = 0.6
+        amp = 0.5
         leg_positions = self.cpg_position_controller(t, freq, amp)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
@@ -699,7 +657,7 @@ class LeggedEnv(gym.Env):
         T[:3, 3] = -self.base_pos # Subtract the translation vector
 
         # Transform goal coordinates from global frame into robot frame
-        relative_goal_pos = np.dot(T, np.append(self.goal_pos, 1))[:3]
+        relative_goal_pos = np.dot(T, np.append(self.goal_pos - self.base_pos, 1))[:3]
 
         # Relative distance to goal (not normalized)
         self.relative_goal_dist = np.sqrt(np.dot(relative_goal_pos, relative_goal_pos))
@@ -843,19 +801,41 @@ class LeggedEnv(gym.Env):
         roll_penalty = -5 * roll**2
 
         gait_reward = 0
-        # Encourage conservative gait in rough terrain
+        self.joint_to_action_map = {
+            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
+        }
+
+        # Encourage conservative gait in higher terrain
+        # But ensure that the transition is smooth
+        frequency = control_params[0]
+        amplitude = control_params[1]
+        # Stepped into higher terrrain
         if self.contact_dist > 0.0:
-            # Reward high amplitude
-            if control_params[0] > 0.4:
-                gait_reward += 0.005
-            # Reward low frequency
-            if control_params[1] < 2.5:
-                gait_reward += 0.005
+            # Reward higher amplitude
+            if 0.4 <= amplitude <= 0.45:
+                gait_reward += 0.025
+            elif amplitude > 0.45:
+                gait_reward += 0.05
+            # Reward lower frequency
+            if 2.3 <= frequency <= 2.5:
+                gait_reward += 0.025
+            elif 2.1 < frequency < 2.3:
+                gait_reward += 0.04
+            elif frequency == 2:
+                gait_reward += 0.05
         else:
-            if control_params[0] < 0.4:
-                gait_reward += 0.005
-            if control_params[1] > 2.5:
-                gait_reward += 0.005
+            # Reward lower amplitude
+            if amplitude == 0.35:
+                gait_reward += 0.025
+            elif amplitude < 0.35:
+                gait_reward += 0.05
+            # Reward higher frequency
+            if 2.6 <= frequency <= 2.8:
+                gait_reward += 0.025
+            elif frequency > 2.8:
+                gait_reward += 0.05
+
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
