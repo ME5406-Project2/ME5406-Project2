@@ -80,10 +80,16 @@ class LeggedEnv(gym.Env):
         # }
 
         # Coupled
+        # self.joint_to_action_map = {
+        #     0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3, 3.2]), # Frequency
+        #     1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
+        # }
+
         self.joint_to_action_map = {
-            0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3, 3.2]), # Frequency
-            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
+            0: np.array([2, 3]), # Frequency
+            1: np.array([0.3, 0.5]), # Amplitude
         }
+
 
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -345,7 +351,7 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [2, 2, 0.15]
+        half_size = [1.6, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
@@ -766,34 +772,58 @@ class LeggedEnv(gym.Env):
         # Encourage conservative gait in higher terrain
         # But ensure that the transition is smooth
 
-        self.joint_to_action_map = {
-            0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3]), # Frequency
-            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
-        }
+        # self.joint_to_action_map = {
+        #     0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3]), # Frequency
+        #     1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
+        # }
         frequency = control_params[0]
         amplitude = control_params[1]
         # Stepped into higher terrrain
+        # if abs(self.contact_dist) > 0.0:
+        #     # Reward higher amplitude
+        #     if amplitude > 0.4:
+        #         gait_reward += 0.4
+        #     else:
+        #         gait_reward -= 0.4
+        #     # Reward lower frequency
+        #     if frequency < 2.4:
+        #         gait_reward += 0.4
+        #     else:
+        #         gait_reward -= 0.4
+        # else:
+        #     # Reward lower amplitude
+        #     if amplitude <= 0.35:
+        #         gait_reward += 0.4
+        #     else:
+        #         gait_reward -= 0.4
+        #     # Reward higher frequency
+        #     if frequency >= 2.8:
+        #         gait_reward += 0.4
+        #     else:
+        #         gait_reward -= 0.4
+
         if abs(self.contact_dist) > 0.0:
             # Reward higher amplitude
-            if amplitude > 0.4:
+            if amplitude == 0.5:
                 gait_reward += 0.4
             else:
-                gait_reward -= 0.4
+                gait_reward -= 0.3
             # Reward lower frequency
-            if frequency < 2.4:
+            if frequency == 2:
                 gait_reward += 0.4
             else:
-                gait_reward -= 0.4
+                gait_reward -= 0.3
         else:
             # Reward lower amplitude
-            if amplitude <= 0.35:
+            if amplitude == 0.3:
                 gait_reward += 0.4
             else:
-                gait_reward -= 0.4
-            if frequency >= 2.8:
+                gait_reward -= 0.3
+            # Reward higher frequency
+            if frequency == 3:
                 gait_reward += 0.4
             else:
-                gait_reward -= 0.4
+                gait_reward -= 0.3
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
