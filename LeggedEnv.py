@@ -81,7 +81,7 @@ class LeggedEnv(gym.Env):
 
         # Coupled
         self.joint_to_action_map = {
-            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
+            0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3, 3.2]), # Frequency
             1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
         }
 
@@ -296,7 +296,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
-        # print(self.contact_dist, control_params)
+        print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -746,52 +746,8 @@ class LeggedEnv(gym.Env):
         return stacked_observations
     
     def get_reward(self, control_params):
-        # Goal reached
-        # if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-        #     self.goal_reward = 500
-        # else:
-        #     self.goal_reward = 0
-
-        # Robot is moving towards goal - Position
-        # if self.prev_dist > self.xyz_obj_dist_to_goal():
         self.position_reward = 0.75 * self.xyz_obj_dist_to_goal()
-        # Robot is moving 
-        # self.move_reward = 0.75 * (self.base_lin_vel[0] - self.prev_base_lin_vel)
-        # self.move_reward = 1.0 * self.normalized_base_lin_vel[0]
-        # self.move_reward = min(self.move_reward, 0.2)
-        # Penalise work done
-        # Get the joint states for the current and next states
-        # current_joint_states = p.getJointStates(self.robot, self.actuators)
-        # work_done = 0.0
-        # for i, joint_state in enumerate(self.prev_joint_states):
-        #     joint_torque = joint_state[3]
-        #     joint_displacement = current_joint_states[i][0] - joint_state[0]
-        #     joint_work = joint_torque * joint_displacement
-        #     work_done += joint_work
-
-        # self.work_done_reward = 0.0001*work_done
-
-        # Time penalty
-        # self.time_reward = -0.05
-
         alive_reward = 0.005
-
-        # Stability penalty
-        # self.stability_reward = -0.1 * abs(self.base_pos[2] - self.prev_base_pos)
-        
-        # dead_penalty = 0
-        # if self.is_dead:
-        #     dead_penalty = -2
-
-        # print("pos_reward", self.position_reward)
-        # print("movreward", self.move_reward)
-
-        # print("prev_dist", self.prev_dist)
-        # print("xyz_dist_to_goal", self.xyz_obj_dist_to_goal())
-            
-        # Time-based penalty
-        # if self.env_step_count >= self.max_steps:
-        #     self.time_reward = -0.01
 
         # # Encourage stability
         # # Value of 1 means perfect stability, 0 means complete instability
@@ -801,18 +757,19 @@ class LeggedEnv(gym.Env):
         # if 1 - abs(roll) - abs(pitch) - abs(z_pos - 0.275):
         #     self.stability_reward = 0.1
 
-        # penalize for too much tilting forward or backwards
+        # Penalize for excessive tilting forward or backwards
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
 
         gait_reward = 0
-        self.joint_to_action_map = {
-            0: np.array([2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3]), # Frequency
-            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
-        }
 
         # Encourage conservative gait in higher terrain
         # But ensure that the transition is smooth
+
+        self.joint_to_action_map = {
+            0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3]), # Frequency
+            1: np.array([0.3, 0.35, 0.4, 0.45, 0.5]), # Amplitude
+        }
         frequency = control_params[0]
         amplitude = control_params[1]
         # Stepped into higher terrrain
@@ -820,23 +777,23 @@ class LeggedEnv(gym.Env):
             # Reward higher amplitude
             if amplitude > 0.4:
                 gait_reward += 0.4
-            elif amplitude <= 0.35:
-                gait_reward -= 0.6
+            else:
+                gait_reward -= 0.4
             # Reward lower frequency
-            if frequency < 2.3:
+            if frequency < 2.4:
                 gait_reward += 0.4
-            elif frequency > 2.8:
-                gait_reward -= 0.6
-        # else:
-        #     # Reward lower amplitude
-        #     if amplitude <= 0.35:
-        #         gait_reward += 0.2
-        #     elif amplitude > 0.4:
-        #         gait_reward -= 0.2
-        #     if frequency > 2.8:
-        #         gait_reward += 0.2
-        #     elif frequency < 2.3:
-        #         gait_reward -= 0.1
+            else:
+                gait_reward -= 0.4
+        else:
+            # Reward lower amplitude
+            if amplitude <= 0.35:
+                gait_reward += 0.4
+            else:
+                gait_reward -= 0.4
+            if frequency >= 2.8:
+                gait_reward += 0.4
+            else:
+                gait_reward -= 0.4
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
