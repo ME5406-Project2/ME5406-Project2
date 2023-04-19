@@ -285,9 +285,9 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             done = True
-        # elif self.check_is_unrecoverable():
-        #     done = True
-        #     self.is_dead = True
+        elif self.check_is_unrecoverable():
+            done = True
+            self.is_dead = True
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
