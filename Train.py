@@ -12,7 +12,7 @@ from stable_baselines3.common.callbacks import CallbackList, EvalCallback, Check
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecFrameStack
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import VecMonitor
+from stable_baselines3.common.vec_env import VecMonitor, VecCheckNan
 
 import os
 from LeggedEnv import LeggedEnv
@@ -28,7 +28,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
           use_LSTM: bool = True, verbose: int = 0, share_features_extractor: bool = True,
           lstm_layers: int = 1, lstm_dropout: float = 0.0,
           learning_rate: float = 0.0001, gamma: float = 0.99, batch_size: int = 256,
-          training_name: string = "unnamed_training", save_freq: int = 10000, eval_freq:int = 5000
+          training_name: string = "unnamed_training", save_freq: int = 20000, eval_freq:int = 40000
           ):
     """
     Trains the agent and logs the training process onto tensorboard
@@ -58,6 +58,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
                            n_envs=num_vectorized_env,
                            vec_env_cls=SubprocVecEnv,
                            wrapper_class=DiscreteActionWrapper)
+        env = VecCheckNan(env, raise_exception=True)
         # env = make_vec_env(env_id=LeggedEnv,
         #                    n_envs=num_vectorized_env,
         #                    vec_env_cls=SubprocVecEnv)
@@ -96,7 +97,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64, 64], pi=[64, 64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor)
         # Defining the DDPG model
@@ -146,7 +147,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[256], pi=[256]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64, 64], pi=[64, 64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
                             )
@@ -193,7 +194,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             policy = "MlpPolicy"
             features_extractor_kwargs = dict()
         # Defining hyperparameters
-        policy_kwargs = dict(net_arch=dict(qf=[400, 300], pi=[400, 300]), # network architecture for q function (qf) and policy function (pi)
+        policy_kwargs = dict(net_arch=dict(qf=[64, 64], pi=[64, 64]), # network architecture for q function (qf) and policy function (pi)
                              features_extractor_kwargs=features_extractor_kwargs,
                              share_features_extractor=share_features_extractor,
                             )
@@ -232,10 +233,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         eval_env = Monitor(eval_env)
     else:
         # eval_env = make_env()
-        eval_env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=5,
-                           vec_env_cls=SubprocVecEnv,
-                           wrapper_class=DiscreteActionWrapper)
+        eval_env = env
         # eval_env = make_vec_env(env_id=LeggedEnv,
         #                    n_envs=10,
         #                    vec_env_cls=SubprocVecEnv)
@@ -302,6 +300,11 @@ def copy_log_file(load_path, dst, algorithm):
 if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
-    # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("SAC", num_timesteps=1e6, training_name='SACTEST')
-    #training11or12
+    # Removed stacked obs and increase learning rate to 0.01
+    # Train("SAC", num_timesteps=1e6, training_name='test1', learning_rate=0.01, num_vectorized_env=25)
+    # Add yaw penalty
+    #Train("SAC", num_timesteps=1e6, training_name='test2', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # Updated obs space and rewards
+    #Train("SAC", num_timesteps=1e6, training_name='test3', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # increased pitch penalty and added mud obs
+    Train("SAC", num_timesteps=1e6, training_name='test4', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)

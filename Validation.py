@@ -64,4 +64,10 @@ if __name__ == "__main__":
     
     #Validation("SAC", "./trained_models/SAC_test/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/SAC_test_260000_steps.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/training31_box_0.8/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test1/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test1/test1_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test2/test2_1000000_steps.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test2/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test3/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/test3/test3_1000000_steps.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/test4/test4_1000000_steps.zip", eval_eps=1)
