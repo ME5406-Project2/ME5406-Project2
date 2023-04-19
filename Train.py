@@ -308,5 +308,11 @@ if __name__ == "__main__":
     #Train("SAC", num_timesteps=1e6, training_name='test3', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
     # increased pitch penalty and added mud obs
     #Train("SAC", num_timesteps=1e6, training_name='test4', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
-    # fixed bugs in the reward for mud increase reward for good actions in mud to 0.05
-    Train("SAC", num_timesteps=1e6, training_name='test5', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # fixed bugs in the reward for mud increase reward for good actions in mud to 0.05, did not reach mud
+    #Train("SAC", num_timesteps=1e6, training_name='test5', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # Add in vel reward to encourage bot to move faster
+    #Train("SAC", num_timesteps=1e6, training_name='test6', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # Increase cmd reward to 0.15 from 0.05
+    #Train("SAC", num_timesteps=1e6, training_name='test7', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # randomize goal position introduced penalties for cmd rwd
+    Train("SAC", num_timesteps=1e6, training_name='test8', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
