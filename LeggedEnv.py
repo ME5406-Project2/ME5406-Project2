@@ -272,7 +272,7 @@ class LeggedEnv(gym.Env):
         return self.get_observation()
     
     def step(self, action):
-        
+
         # CPG controller learning
         timestep = (self.env_step_count+1) * (1/240)
         control_params = []
@@ -385,7 +385,7 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [2, 2, 0.15]
+        half_size = [1.5, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the triangular block
@@ -870,22 +870,22 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
         heading_penalty = - 1.5 * heading_error**2
-
+        
         gait_reward = 0
         # Encourage conservative gait in rough terrain
         if self.check_robot_legs_in_mud(): #self.contact_dist > 0.0:
             # print("in mud")
             # Reward high amplitude
-            if control_params[0] > 0.4:
-                gait_reward += 0.005
+            if control_params[1] > 0.4:
+                gait_reward += 0.05
             # Reward low frequency
-            if control_params[1] < 2.5:
-                gait_reward += 0.005
+            if control_params[0] < 2.5:
+                gait_reward += 0.05
         else:
-            if control_params[0] < 0.4:
-                gait_reward += 0.005
-            if control_params[1] > 2.5:
-                gait_reward += 0.005
+            if control_params[1] < 0.4:
+                gait_reward += 0.05
+            if control_params[0] > 2.5:
+                gait_reward += 0.05
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
