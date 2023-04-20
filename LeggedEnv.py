@@ -86,7 +86,7 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([2, 3]), # Frequency
+            0: np.array([2.0, 3.0]), # Frequency
             1: np.array([0.3, 0.5]), # Amplitude
         }
 
@@ -326,7 +326,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [5.5, -0.25, 0]
+        box_pos = [5.1, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -353,12 +353,12 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [1.6, 2, 0.15]
+        half_size = [1.8, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
         if random.randint(0,1):
-            block_position = [4, 0, 0]
+            block_position = [4.5, 0, 0]
         else:
             block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -824,6 +824,7 @@ class LeggedEnv(gym.Env):
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
         reward = -self.position_reward  + pitch_penalty + roll_penalty + alive_reward + gait_reward
+        return reward
     
     def process_and_cmd_vel(self):
         joint_pos_arr = []
