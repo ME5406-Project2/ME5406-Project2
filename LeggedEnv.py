@@ -121,11 +121,11 @@ class LeggedEnv(gym.Env):
         # Define observation spaces
         # obs_shape = self.get_observation().shape
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(120,), dtype=np.float64)
+            low=-np.inf, high=np.inf, shape=(124,), dtype=np.float64)
         
         # Buffer for history stacking of observations
         self.buffer_size = 4
-        self.obs_buffer = np.zeros((self.buffer_size, 30))
+        self.obs_buffer = np.zeros((self.buffer_size, 31))
 
         # Robot weight
         self.weight = self.compute_weight()
@@ -308,8 +308,8 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward(control_params) + goal_penalty
-        print(self.contact_dist, control_params)
+        reward = self.get_reward(control_params)
+        # print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -331,7 +331,7 @@ class LeggedEnv(gym.Env):
     
     def generate_goal(self):
         
-        box_pos = [6, -0.25, 0]
+        box_pos = [5.5, -0.25, 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -358,17 +358,16 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [2.5, 2, 0.15]
-        # half_size = [5, 2, 0.15]
+        half_size = [5, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
-        if random.randint(0,1):
-            block_position = [4, 0, 0]
-        else:
-            block_position = [1, 0, 0]
+        # if random.randint(0,1):
+        #     block_position = [4, 0, 0]
+        # else:
+        #     block_position = [1, 0, 0]
         # block_position = [15,0,0]
-        # block_position = [1, 0, 0]
+        block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
@@ -714,6 +713,7 @@ class LeggedEnv(gym.Env):
         contact_forces = []
         frictional_forces = []
         z_force_values = []
+        contact_distance = []
         # Link IDs of the end-effectors
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
@@ -729,6 +729,10 @@ class LeggedEnv(gym.Env):
                 # frictional_forces.append(0)
                 contact_forces.append(np.array([0, 0, 0]))
                 z_force_values.append(0)
+                nearest_dist = self.robot_legs_EE_pos[i][2]
+                # print("seperation dist", foot_id, nearest_dist)
+                if foot_id == 1:
+                    contact_distance.append(min(1, nearest_dist))
             else:
                 # contact_forces.append((contact_points[9] - average_force)/(average_force))
                 # frictional_forces.append(contact_points[10])
@@ -736,10 +740,22 @@ class LeggedEnv(gym.Env):
                 normal_forces /= np.linalg.norm(normal_forces)
                 contact_forces.append(np.array(normal_forces))
                 z_force_values.append(contact_points[0][9])
+                # check if in contact with mud
+                if foot_id == 1:
+                    contact_points_mud = p.getContactPoints(bodyA=self.robot, 
+                                                    bodyB=self.mud, 
+                                                    linkIndexA=foot_id)
+                    mud_depth = contact_points_mud[0][8] if len(contact_points_mud)>0 else 0
+                    # get leg penetration distance into ground / mud
+                    penetration_dist = min(contact_points[0][8], mud_depth)
+                    
+                    # print("penetration dist", foot_id, penetration_dist)
+                    contact_distance.append(max(penetration_dist, -1))
         # flatten contact forces
         contact_forces = np.concatenate(contact_forces)
         # print(z_force_values)
 
+        contact_distance_obs = np.array([abs(self.contact_dist)])
 
         # Normalised observations
         observation = np.hstack([
@@ -749,7 +765,8 @@ class LeggedEnv(gym.Env):
             *self.normalized_base_ang_vel,
             *self.normalized_base_orn,
             np.array(self.relative_goal_dist, dtype=np.float64),
-            np.array(self.relative_goal_vect, dtype=np.float64)
+            np.array(self.relative_goal_vect, dtype=np.float64),
+            *contact_distance_obs
         ])
         # Update buffer
         self.obs_buffer[:-1] = self.obs_buffer[1:]
