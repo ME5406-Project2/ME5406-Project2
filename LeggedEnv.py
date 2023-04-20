@@ -8,6 +8,7 @@ from Surface import Surface
 from gym.spaces import MultiDiscrete
 from gym import GoalEnv
 import random
+import matplotlib.pyplot as plt
 
 class LeggedEnv(gym.Env):
     """
@@ -136,6 +137,9 @@ class LeggedEnv(gym.Env):
         self.cpg_cnt = 0
         self.store_joint_vel = []
 
+        # Data Collection Code
+        self.data_log = {"freq":[], "amp":[], "control_signal":[]} #todo
+
     def spawn_robot(self):
         """
         Instantiates the robot in the simulation.
@@ -194,6 +198,10 @@ class LeggedEnv(gym.Env):
         self.prev_joint_states = p.getJointStates(self.robot, self.actuators)
 
     def reset(self):
+        # clear data
+        self.data_log["freq"] = []
+        self.data_log["amp"] = []
+        self.data_log["control_signal"] = []
 
         self.reward = 0
         self.env_step_count = 0
@@ -236,7 +244,6 @@ class LeggedEnv(gym.Env):
         return self.get_observation()
     
     def step(self, action):
-        
         self.check_robot_legs_in_mud()
         # CPG controller learning
         timestep = (self.env_step_count+1) * (1/240)
@@ -246,6 +253,10 @@ class LeggedEnv(gym.Env):
             control_params.append(param_val)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
 
+        self.data_log["freq"].append(action[0]) #todo
+        self.data_log["amp"].append(action[1])
+        self.data_log["control_signal"].append(cmd_joint_pos[0])
+        
         # Crawl gait position control
         # joint_positions = []
         # # Find the actions based on pre-defined mappings
@@ -908,6 +919,32 @@ class LeggedEnv(gym.Env):
             link_mass = link_urdf_data[0]
             total_mass += link_mass
         return total_mass*9.81
+
+    def plot_graph(self):
+        time = [i+1 for i in range(len(self.data_log["freq"]))]
+        # Plot freq against time
+        plt.figure()
+        plt.plot(time, self.data_log["freq"])
+        plt.title('Frequency vs Time')
+        plt.xlabel('Time (episodes)')
+        plt.ylabel('Frequency (Hz)')
+        plt.savefig('FreqVSTime.png')
+
+        # Plot Amplitude against time
+        plt.figure()
+        plt.plot(time, self.data_log["amp"])
+        plt.title('Amplitude vs Time')
+        plt.xlabel('Time (episodes)')
+        plt.ylabel('Amplitude')
+        plt.savefig('AmpVSTime.png')
+
+        # Plot Control Signal vs Time
+        plt.figure()
+        plt.plot(time, self.data_log["control_signal"])
+        plt.title('Control Signal vs Time')
+        plt.xlabel('Time (episodes)')
+        plt.ylabel('Control Signal')
+        plt.savefig('CtrlSigVSTime.png')
 
 
 
