@@ -238,6 +238,7 @@ class LeggedEnv(gym.Env):
     
     def step(self, action):
         
+        self.check_robot_legs_in_mud()
         # CPG controller learning
         timestep = (self.env_step_count+1) * (1/240)
         control_params = []
@@ -302,7 +303,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
-        print(self.contact_dist, control_params)
+        # print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -504,7 +505,7 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward([0,0])
+        reward = self.get_reward([2, 0.5])
         self.reward += reward
         self.prev_dist = self.xyz_obj_dist_to_goal()
 
@@ -585,7 +586,7 @@ class LeggedEnv(gym.Env):
         
     def get_observation(self):
 
-        self.check_robot_legs_in_mud()
+        # self.check_robot_legs_in_mud()
         
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
@@ -779,51 +780,16 @@ class LeggedEnv(gym.Env):
         frequency = control_params[0]
         amplitude = control_params[1]
         # Stepped into higher terrrain
-        # if abs(self.contact_dist) > 0.0:
-        #     # Reward higher amplitude
-        #     if amplitude > 0.4:
-        #         gait_reward += 0.4
-        #     else:
-        #         gait_reward -= 0.4
-        #     # Reward lower frequency
-        #     if frequency < 2.4:
-        #         gait_reward += 0.4
-        #     else:
-        #         gait_reward -= 0.4
-        # else:
-        #     # Reward lower amplitude
-        #     if amplitude <= 0.35:
-        #         gait_reward += 0.4
-        #     else:
-        #         gait_reward -= 0.4
-        #     # Reward higher frequency
-        #     if frequency >= 2.8:
-        #         gait_reward += 0.4
-        #     else:
-        #         gait_reward -= 0.4
-
         if abs(self.contact_dist) > 0.0:
-            # Reward higher amplitude
-            if amplitude == 0.5:
-                gait_reward += 0.4
-            else:
-                gait_reward -= 0.3
-            # Reward lower frequency
-            if frequency == 2:
-                gait_reward += 0.4
-            else:
-                gait_reward -= 0.3
+            desired_amp = 0.5
+            desired_freq = 2.0
         else:
-            # Reward lower amplitude
-            if amplitude == 0.3:
-                gait_reward += 0.4
-            else:
-                gait_reward -= 0.3
-            # Reward higher frequency
-            if frequency == 3:
-                gait_reward += 0.4
-            else:
-                gait_reward -= 0.3
+            desired_amp = 0.3
+            desired_freq = 3.0
+
+        amp_error = 3.0 * abs(frequency - desired_freq)
+        freq_error = 3.0 * abs(amplitude - desired_amp)
+        gait_reward = -amp_error - freq_error
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
