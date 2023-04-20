@@ -293,12 +293,12 @@ class LeggedEnv(gym.Env):
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             print("Control params", self.contact_dist, control_params)
-            if abs(self.contact_dist) > 0.0:
-                if control_params[0] > 2.2 or control_params[1] < 0.45:
-                    goal_penalty = -600
-            else:
-                if control_params[0] < 2.7 or control_params[1] > 0.34:
-                    goal_penalty = -600
+            # if abs(self.contact_dist) > 0.0:
+            #     if control_params[0] > 2.2 or control_params[1] < 0.45:
+            #         goal_penalty = -600
+            # else:
+            #     if control_params[0] < 2.7 or control_params[1] > 0.34:
+            #         goal_penalty = -600
             done = True
         elif self.check_is_unrecoverable():
             done = True
