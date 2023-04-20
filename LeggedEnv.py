@@ -292,6 +292,7 @@ class LeggedEnv(gym.Env):
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
+            print("Control params", self.contact_dist, control_params)
             done = True
         elif self.check_is_unrecoverable():
             done = True
@@ -769,6 +770,8 @@ class LeggedEnv(gym.Env):
         roll_penalty = -5 * roll**2
 
         gait_reward = 0
+        k_amp_low = 1.0
+        k_freq_low = 1.0
 
         # Encourage conservative gait in higher terrain
         # But ensure that the transition is smooth
@@ -779,17 +782,38 @@ class LeggedEnv(gym.Env):
         # }
         frequency = control_params[0]
         amplitude = control_params[1]
+
         # Stepped into higher terrrain
+        # if abs(self.contact_dist) > 0.0:
+        #     desired_amp = 0.5
+        #     desired_freq = 2.0
+        #     k_amp_high = 2.0 * k_amp_low  
+        #     k_freq_high = 0.5 * k_freq_low  
+        # else:
+        #     desired_amp = 0.3
+        #     desired_freq = 3.0
+        #     k_amp_high = 0.5 * k_amp_low 
+        #     k_freq_high = 2.0 * k_freq_low
+
+        # freq_error = abs(frequency - desired_freq) / desired_freq
+        # amp_error = abs(amplitude - desired_amp) / desired_amp
+        # # gait_reward = -k_amp * amp_error - k_freq * freq_error
+        # # gait_reward = -amp_error - freq_error
+        # gait_reward = - (k_amp_high * amp_error**2 + k_freq_high * freq_error**2)
+        # print(gait_reward)
+
         if abs(self.contact_dist) > 0.0:
             desired_amp = 0.5
-            desired_freq = 2.0
+            desired_freq = 2.0 
         else:
             desired_amp = 0.3
             desired_freq = 3.0
 
-        amp_error = 3.0 * abs(frequency - desired_freq)
-        freq_error = 3.0 * abs(amplitude - desired_amp)
-        gait_reward = -amp_error - freq_error
+        freq_error = 4.0 * abs(frequency - desired_freq) / desired_freq
+        amp_error = 4.0 * 1.25 * abs(amplitude - desired_amp) / desired_amp
+
+        gait_reward = -freq_error - amp_error
+        print(gait_reward)
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
@@ -800,8 +824,6 @@ class LeggedEnv(gym.Env):
         # Sum of all rewards
         # reward = -(self.position_reward - self.move_reward + self.work_done_reward - self.stability_reward)
         reward = -self.position_reward  + pitch_penalty + roll_penalty + alive_reward + gait_reward
-
-        return reward
     
     def process_and_cmd_vel(self):
         joint_pos_arr = []
