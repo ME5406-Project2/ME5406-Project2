@@ -815,7 +815,7 @@ class LeggedEnv(gym.Env):
             desired_freq = 3.0
 
         freq_error = 4.0 * abs(frequency - desired_freq) / desired_freq
-        amp_error = 4.0 * 1.25 * abs(amplitude - desired_amp) / desired_amp
+        amp_error = 7.0 * abs(amplitude - desired_amp) / desired_amp
 
         gait_reward = -freq_error - amp_error
 
