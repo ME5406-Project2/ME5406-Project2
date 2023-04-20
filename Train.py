@@ -330,4 +330,12 @@ if __name__ == "__main__":
     # Remove limit for pitch and roll penalties, fixed bugs
     #Train("SAC", num_timesteps=1e6, training_name='test14', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
     # increase heading penalty to -2
-    Train("SAC", num_timesteps=2e6, training_name='test15', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    #Train("SAC", num_timesteps=2e6, training_name='test15', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # randomize position of goal
+    #Train("SAC", num_timesteps=1e6, training_name='test16', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # reduce the reduce possible postions of the goal and force by mud
+    #Train("SAC", num_timesteps=1e6, training_name='test17', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # shorten the dist to goal
+    #Train("SAC", num_timesteps=1e6, training_name='test18', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # change randomization to fully mud / no mud
+    Train("SAC", num_timesteps=1e6, training_name='test19', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)

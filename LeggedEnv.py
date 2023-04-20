@@ -120,10 +120,10 @@ class LeggedEnv(gym.Env):
         #     1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]), # Amplitude
         # }
         self.joint_to_action_map = {
-            0: np.array([2, 2.25, 2.5, 2.75, 3]), # Left Frequency
-            1: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Left Amplitude
-            2: np.array([2, 2.25, 2.5, 2.75, 3]), # Right Frequency
-            3: np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), # Right Amplitude
+            0: np.array([2, 2.2, 2.4, 2.6, 2.8, 3]), # Left Frequency
+            1: np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]), # Left Amplitude
+            2: np.array([2, 2.2, 2.4, 2.6, 2.8, 3]), # Right Frequency
+            3: np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]), # Right Amplitude
         }
 
         # self.joint_to_action_map = {
@@ -370,8 +370,7 @@ class LeggedEnv(gym.Env):
         return dist
     
     def generate_goal(self):
-        
-        box_pos = [5.5, -0.25, 0]
+        box_pos = [3.5, -0.25 + random.randint(-1, 1), 0]
         box_orn = p.getQuaternionFromEuler([0, 0, 0])
 
         self.box_collision_shape = p.createCollisionShape(p.GEOM_BOX,
@@ -398,11 +397,17 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [1.5, 2, 0.15]
+        if random.random() > 0.5:
+            # have mud
+            half_size = [5, 3, 0.15]
+        else:
+            # no mud
+            half_size = [0, 0, 0]
+        
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
         
         # create a multi-body object for the triangular block
-        block_position = [random.randint(0,5), 0, 0]
+        block_position = [3, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
@@ -436,7 +441,7 @@ class LeggedEnv(gym.Env):
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
         in_mud = False
-        force = [0, 0, -30]
+        force = [0, 0, -15]
         EE_pose, _ = self.get_end_effector_pose()
         for i, foot_id in enumerate(foot_link_ids):
             contact_points = p.getContactPoints(bodyA=self.robot, 
