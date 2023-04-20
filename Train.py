@@ -324,4 +324,10 @@ if __name__ == "__main__":
     #limit the angular penalties
     #Train("SAC", num_timesteps=1e6, training_name='test11', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
     #limit increase vel reward (0.2 - 0.5) and heading penaly to -1 from -0.5 
-    Train("SAC", num_timesteps=1e6, training_name='test12', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    #Train("SAC", num_timesteps=1e6, training_name='test12', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # left 2 legs and right 2 legs coupled together
+    #Train("SAC", num_timesteps=1e6, training_name='test13', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # Remove limit for pitch and roll penalties, fixed bugs
+    #Train("SAC", num_timesteps=1e6, training_name='test14', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)
+    # increase heading penalty to -2
+    Train("SAC", num_timesteps=2e6, training_name='test15', learning_rate=0.01, num_vectorized_env=25, use_LSTM=True)

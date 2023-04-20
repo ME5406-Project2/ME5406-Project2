@@ -288,7 +288,7 @@ class LeggedEnv(gym.Env):
             control_params.append(param_val)
         #cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
         cmd_joint_pos = self.cpg_position_controller_half_decoupled(timestep, control_params)
-        # print(control_params)
+        print(control_params)
         # Crawl gait position control
         # joint_positions = []
         # # Find the actions based on pre-defined mappings
@@ -436,7 +436,7 @@ class LeggedEnv(gym.Env):
         # Respectively: FL, FR, BL, BR
         foot_link_ids = [1, 3, 5, 7]
         in_mud = False
-        force = [0, 0, -15]
+        force = [0, 0, -30]
         EE_pose, _ = self.get_end_effector_pose()
         for i, foot_id in enumerate(foot_link_ids):
             contact_points = p.getContactPoints(bodyA=self.robot, 
@@ -478,19 +478,20 @@ class LeggedEnv(gym.Env):
                 back_left_leg_pos, back_right_leg_pos]
     
     def cpg_position_controller_half_decoupled(self, t, control_params):
-        l_amplitude = control_params[0]
-        l_frequency = control_params[1]
-        r_amplitude = control_params[2]
-        r_frequency = control_params[3]
+        l_frequency = control_params[0]
+        l_amplitude = control_params[1]
+        r_frequency = control_params[2]
+        r_amplitude = control_params[3]
+        
         self.phase_offset = 0
 
         # Calculate the CPG output for each leg
         front_left_leg_pos = l_amplitude * np.sin(
             2 * np.pi * l_frequency * t + self.phase_offset)
         front_right_leg_pos = r_amplitude * np.sin(
-            2 * np.pi * r_frequency * t + np.pi / 2 + self.phase_offset) 
+            2 * np.pi * r_frequency * t + np.pi + self.phase_offset) 
         back_left_leg_pos = l_amplitude * np.sin(
-            2 * np.pi * l_frequency * t + np.pi / 2 + self.phase_offset) 
+            2 * np.pi * l_frequency * t + np.pi + self.phase_offset) 
         back_right_leg_pos = r_amplitude * np.sin(
             2 * np.pi * r_frequency * t + self.phase_offset)
 
@@ -652,7 +653,21 @@ class LeggedEnv(gym.Env):
         return self.stride_length
 
         
-    def get_observation(self):        
+    def get_observation(self):
+        def saturate_values(vals):
+            sat_values = []
+            for val in vals:
+                if val > 0:
+                    sat_values.append(min(val, 1))
+                else:
+                    sat_values.append(max(-1, val))
+            return sat_values
+        def saturate_value(val):
+            if val > 0:
+                return min(val, 1)
+            else:
+                return max(val, -1)
+            
         # Positions of all 8 joints
         self.joint_positions = np.array([p.getJointState(self.robot, self.actuators[i])[0] 
                                        for i in range(self.num_of_joints)])
@@ -690,10 +705,11 @@ class LeggedEnv(gym.Env):
         # proposed method to estimate linear velocity: model legs as a 2 wheel differential drive (overestimate)
         # length of leg = 0.575m, dist between legs = 0.565
         # lin_vel_max = pi*0.575 (assume all 4 legs in sync and max angle leg can cover in 1s pi rad)
-        # ang_vel_max = 0.575*2pi / 0.565 ~= 2pi 
-        base_lin_vel_limit, base_ang_vel_limit = 0.575*np.pi , 2*np.pi
-        self.normalized_base_lin_vel = np.array(self.base_lin_vel / base_lin_vel_limit, dtype=np.float64)
-        self.normalized_base_ang_vel = np.array(self.base_ang_vel / base_ang_vel_limit, dtype=np.float64)
+        # ang_vel_max = 0.575*2pi / 0.565 ~= 2pi 0.575*np.pi
+        base_lin_vel_limit, base_ang_vel_limit = 5, 2*np.pi
+        self.normalized_base_lin_vel = np.array(saturate_values(self.base_lin_vel / base_lin_vel_limit), dtype=np.float64)
+
+        self.normalized_base_ang_vel = np.array(saturate_values(self.base_ang_vel / base_ang_vel_limit), dtype=np.float64)
 
         # Robot Position
         self.base_pos = np.array(p.getBasePositionAndOrientation(self.robot)[0])
@@ -743,13 +759,8 @@ class LeggedEnv(gym.Env):
         else:
             self.relative_goal_vect = relative_goal_pos / self.relative_goal_dist
         # Normalize relative distance to goal
-        self.relative_goal_dist = self.relative_goal_dist / np.linalg.norm(self.goal_pos - self.robot_start_pos)# - 1
-        # limit to [-1, 1]
-        # if not -1 <= self.relative_goal_dist <= 1:
-        #     if self.relative_goal_dist > 0:
-        #         self.relative_goal_dist = 1
-        #     else:
-        #         self.relative_goal_dist = -1
+        self.relative_goal_dist = self.relative_goal_dist / np.linalg.norm(self.goal_pos - self.robot_start_pos) - 1
+        self.relative_goal_dist = saturate_value(self.relative_goal_dist)
         
         leg_pos_robot_frame_norm = []
         for leg_pos in self.robot_legs_EE_pos:
@@ -910,31 +921,31 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
         heading_penalty = - 1.5 * heading_error**2
-        pitch_penalty = max(-0.5, pitch_penalty)
-        roll_penalty = max(-0.5, roll_penalty)
-        heading_penalty = max(-1, heading_penalty)
+        # pitch_penalty = max(-0.5, pitch_penalty)
+        # roll_penalty = max(-0.5, roll_penalty)
+        heading_penalty = max(-2, heading_penalty)
 
         gait_reward = 0
         # Encourage conservative gait in rough terrain
-        if self.check_robot_legs_in_mud(): #self.contact_dist > 0.0:
-            # print("in mud")
-            # Reward high amplitude
-            if control_params[1] > 0.4:
-                gait_reward += 0.15
-            # else:
-            #     gait_reward -= 0.25
-            # Reward low frequency
-            if control_params[0] < 2.5:
-                gait_reward += 0.15
-            # else:
-            #     gait_reward -= 0.25
-        else:
-            if control_params[1] <= 0.4:
-                gait_reward += 0.15
-            # else:
-            #     gait_reward -= 0.25
-            if control_params[0] >= 2.5:
-                gait_reward += 0.15
+        # if self.check_robot_legs_in_mud(): #self.contact_dist > 0.0:
+        #     # print("in mud")
+        #     # Reward high amplitude
+        #     if control_params[1] > 0.4:
+        #         gait_reward += 0.15
+        #     # else:
+        #     #     gait_reward -= 0.25
+        #     # Reward low frequency
+        #     if control_params[0] < 2.5:
+        #         gait_reward += 0.15
+        #     # else:
+        #     #     gait_reward -= 0.25
+        # else:
+        #     if control_params[1] <= 0.4:
+        #         gait_reward += 0.15
+        #     # else:
+        #     #     gait_reward -= 0.25
+        #     if control_params[0] >= 2.5:
+        #         gait_reward += 0.15
             # else:
             #     gait_reward -= 0.25
         # if self.check_no_feet_on_ground():
