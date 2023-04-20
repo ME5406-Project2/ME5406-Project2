@@ -769,7 +769,7 @@ class LeggedEnv(gym.Env):
         pitch_penalty = -5 * pitch**2
         roll_penalty = -5 * roll**2
 
-        gait_reward = 0
+        gait_reward = 0.0
         k_amp_low = 1.0
         k_freq_low = 1.0
 
@@ -813,7 +813,7 @@ class LeggedEnv(gym.Env):
         amp_error = 4.0 * 1.25 * abs(amplitude - desired_amp) / desired_amp
 
         gait_reward = -freq_error - amp_error
-        print(gait_reward)
+
         # if self.check_no_feet_on_ground():
         #     self.contact_reward = -0.01
         # ADDITIONS TO BE MADE
