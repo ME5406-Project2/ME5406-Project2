@@ -2,11 +2,11 @@ import shutil
 import string
 import gym
 from DiscreteWrapper import DiscreteActionWrapper
-from stable_baselines3 import PPO, SAC, DDPG, TD3
+from stable_baselines3 import PPO, SAC, DDPG, TD3, A2C
 # from sb3_contrib import TRPO
 from CustomNetwork import (Custom_DDPG_Policy, Custom_PPO_Policy, 
                            Custom_SAC_Policy, Custom_TD3_Policy, 
-                           Custom_TRPO_Policy)
+                           Custom_TRPO_Policy, Custom_A2C_Policy)
 from gym.spaces import MultiDiscrete
 from stable_baselines3.common.callbacks import CallbackList, EvalCallback, CheckpointCallback, StopTrainingOnNoModelImprovement
 from stable_baselines3.common.monitor import Monitor
@@ -34,6 +34,7 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     Trains the agent and logs the training process onto tensorboard
     :param algorithm: algorithm name
     :param num_vectorized_env: number of vectorized environment to be used
+                    NOTE: DDPG and TD3 does not support vectorized environment
     :param load_path: path to model to continue training (Default is None)
     
     :param num_timesteps: number of timesteps to train
@@ -54,10 +55,13 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     :param save_freq: frequency to save model
     """
     if (num_vectorized_env>1):
-        env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=num_vectorized_env,
-                           vec_env_cls=SubprocVecEnv,
-                           wrapper_class=DiscreteActionWrapper)
+        if (algorithm == "TD3" or algorithm == "DDPG"):
+            env = make_env()
+        else:
+            env = make_vec_env(env_id=LeggedEnv,
+                            n_envs=num_vectorized_env,
+                            vec_env_cls=SubprocVecEnv,
+                            wrapper_class=DiscreteActionWrapper)
         # env = make_vec_env(env_id=LeggedEnv,
         #                    n_envs=num_vectorized_env,
         #                    vec_env_cls=SubprocVecEnv)
@@ -209,7 +213,30 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
             model = TD3(policy=policy, env=env, verbose=verbose,
                         learning_rate=learning_rate, batch_size=batch_size, gamma=gamma,
                         policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
-
+    elif (algorithm=="A2C"):
+        # Defining policy to be used
+        if use_LSTM:
+            policy = Custom_A2C_Policy
+            features_extractor_kwargs = dict(features_dim=num_features, lstm_layers=lstm_layers, lstm_dropout=lstm_dropout)
+        else:
+            policy = "MlpPolicy"
+            features_extractor_kwargs = dict()
+        # Defining hyperparameters
+        policy_kwargs = dict(net_arch=dict(vf=[64,64], pi=[64,64]), # network architecture for value function (vf) and policy function (pi)
+                             features_extractor_kwargs=features_extractor_kwargs,
+                             share_features_extractor=share_features_extractor)
+        # Defining the A2C model
+        if load_path is not None:
+            # load a pre trained model
+            # model at specified path will be overwritten if save path is the same as load path
+            model = A2C.load(path=load_path, policy=policy, env=env, verbose=verbose,
+                     learning_rate=learning_rate, gamma=gamma,
+                     policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
+            print("Model loaded from {}".format(load_path))
+        else:
+            model = A2C(policy=policy, env=env, verbose=verbose,
+                        learning_rate=learning_rate, gamma=gamma,
+                        policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_path)
     else:
         raise ValueError("Invalid algorithm name: {}".format(algorithm))
     
@@ -232,10 +259,13 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
         eval_env = Monitor(eval_env)
     else:
         # eval_env = make_env()
-        eval_env = make_vec_env(env_id=LeggedEnv,
-                           n_envs=5,
-                           vec_env_cls=SubprocVecEnv,
-                           wrapper_class=DiscreteActionWrapper)
+        if (algorithm == "TD3" or algorithm == "DDPG"):
+            env = make_env()
+        else:
+            eval_env = make_vec_env(env_id=LeggedEnv,
+                            n_envs=5,
+                            vec_env_cls=SubprocVecEnv,
+                            wrapper_class=DiscreteActionWrapper)
         # eval_env = make_vec_env(env_id=LeggedEnv,
         #                    n_envs=10,
         #                    vec_env_cls=SubprocVecEnv)
@@ -303,5 +333,7 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    Train("SAC", num_timesteps=1e6, training_name='SACTEST')
+    #Train("SAC", num_timesteps=1e6, training_name='SACTEST')
+    Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
+
     #training11or12
