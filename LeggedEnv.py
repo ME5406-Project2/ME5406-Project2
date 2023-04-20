@@ -290,9 +290,16 @@ class LeggedEnv(gym.Env):
 
         # Terminating conditions
         # Reached goal
+        goal_reward = 0
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             print("Control params", self.contact_dist, control_params)
+            if abs(self.contact_dist) > 0.0:
+                if control_params != [2, 0.5]:
+                    goal_reward = -500
+            else:
+                if control_params != [3, 0.3]:
+                    goal_reward = -500
             done = True
         elif self.check_is_unrecoverable():
             done = True
@@ -303,7 +310,7 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward(control_params)
+        reward = self.get_reward(control_params) + goal_reward
         # print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
