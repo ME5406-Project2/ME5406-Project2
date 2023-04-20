@@ -86,8 +86,8 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([2.0, 3.0]), # Frequency
-            1: np.array([0.3, 0.5]), # Amplitude
+            0: np.array([2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0]), # Frequency
+            1: np.array([0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5]), # Amplitude
         }
 
 
@@ -276,7 +276,6 @@ class LeggedEnv(gym.Env):
         
         # Step the simulation
         p.stepSimulation()
-        time.sleep(1/240)
         self.env_step_count += 1
         
         # Get the observation
@@ -290,16 +289,16 @@ class LeggedEnv(gym.Env):
 
         # Terminating conditions
         # Reached goal
-        goal_reward = 0
+        goal_penalty = 0
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             print("Goal Reached!")
             print("Control params", self.contact_dist, control_params)
             if abs(self.contact_dist) > 0.0:
-                if control_params != [2, 0.5]:
-                    goal_reward = -500
+                if control_params[0] > 2.2 or control_params[1] < 0.45:
+                    goal_penalty = -600
             else:
-                if control_params != [3, 0.3]:
-                    goal_reward = -500
+                if control_params[0] < 2.7 or control_params[1] > 0.34:
+                    goal_penalty = -600
             done = True
         elif self.check_is_unrecoverable():
             done = True
@@ -310,7 +309,7 @@ class LeggedEnv(gym.Env):
         else:
             done = False
 
-        reward = self.get_reward(control_params) + goal_reward
+        reward = self.get_reward(control_params) + goal_penalty
         # print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
@@ -789,7 +788,6 @@ class LeggedEnv(gym.Env):
         # }
         frequency = control_params[0]
         amplitude = control_params[1]
-
         # Stepped into higher terrrain
         # if abs(self.contact_dist) > 0.0:
         #     desired_amp = 0.5
