@@ -86,10 +86,9 @@ class LeggedEnv(gym.Env):
         # }
 
         self.joint_to_action_map = {
-            0: np.array([2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0]), # Frequency
-            1: np.array([0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5]), # Amplitude
+            0: np.array([2.0, 2.2, 2.4, 2.6, 2.8, 3.0]), # Frequency
+            1: np.array([0.3, 0.34, 0.38, 0.42, 0.46, 0.5]), # Amplitude
         }
-
 
         # Load the initial parameters again
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) 
@@ -816,7 +815,7 @@ class LeggedEnv(gym.Env):
             desired_freq = 3.0
 
         freq_error = 4.0 * abs(frequency - desired_freq) / desired_freq
-        amp_error = 7.0 * abs(amplitude - desired_amp) / desired_amp
+        amp_error = 6.5 * abs(amplitude - desired_amp) / desired_amp
 
         gait_reward = -freq_error - amp_error
 
