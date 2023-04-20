@@ -32,7 +32,7 @@ class LeggedEnv(gym.Env):
         self.obs = {}
 
         # Termination condition parameter
-        self.termination_pos_dist = 0.5
+        self.termination_pos_dist = 0.7
         self.max_steps = 3000
         self.env_step_count = 0
         self.prev_dist = 0
