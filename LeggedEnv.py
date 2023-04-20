@@ -309,7 +309,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params) + goal_penalty
-        # print(self.contact_dist, control_params)
+        print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
@@ -358,7 +358,8 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [5, 2, 0.15]
+        half_size = [2.5, 2, 0.15]
+        # half_size = [5, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
@@ -366,7 +367,8 @@ class LeggedEnv(gym.Env):
         #     block_position = [4.5, 0, 0]
         # else:
         #     block_position = [1, 0, 0]
-        block_position = [1, 0, 0]
+        block_position = [15,0,0]
+        # block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
