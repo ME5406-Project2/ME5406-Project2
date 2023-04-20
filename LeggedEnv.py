@@ -362,12 +362,12 @@ class LeggedEnv(gym.Env):
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
-        # if random.randint(0,1):
-        #     block_position = [4, 0, 0]
-        # else:
-        #     block_position = [1, 0, 0]
+        if random.randint(0,1):
+            block_position = [15, 0, 0]
+        else:
+            block_position = [1, 0, 0]
         # block_position = [15,0,0]
-        block_position = [1, 0, 0]
+        # block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
