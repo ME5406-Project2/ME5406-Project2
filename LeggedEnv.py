@@ -255,8 +255,8 @@ class LeggedEnv(gym.Env):
             control_params.append(param_val)
         cmd_joint_pos = self.cpg_position_controller(timestep, control_params[0], control_params[1])
 
-        self.data_log["freq"].append(action[0]) #todo
-        self.data_log["amp"].append(action[1])
+        self.data_log["freq"].append(control_params[0]) #todo
+        self.data_log["amp"].append(control_params[1])
         self.data_log["control_signal"].append(cmd_joint_pos[0])
         
         # Crawl gait position control
@@ -312,6 +312,7 @@ class LeggedEnv(gym.Env):
             #     if control_params[0] < 2.7 or control_params[1] > 0.34:
             #         goal_penalty = -600
             done = True
+            self.plot_graph()
         elif self.check_is_unrecoverable():
             done = True
             self.is_dead = True
@@ -929,28 +930,29 @@ class LeggedEnv(gym.Env):
         return total_mass*9.81
 
     def plot_graph(self):
+        algo = "(SAC)"
         time = [i+1 for i in range(len(self.data_log["freq"]))]
         # Plot freq against time
         plt.figure()
         plt.plot(time, self.data_log["freq"])
-        plt.title('Frequency vs Time')
-        plt.xlabel('Time (episodes)')
+        plt.title('Frequency vs Time ' + algo)
+        plt.xlabel('Time (steps)')
         plt.ylabel('Frequency (Hz)')
         plt.savefig('FreqVSTime.png')
 
         # Plot Amplitude against time
         plt.figure()
         plt.plot(time, self.data_log["amp"])
-        plt.title('Amplitude vs Time')
-        plt.xlabel('Time (episodes)')
+        plt.title('Amplitude vs Time ' + algo)
+        plt.xlabel('Time (steps)')
         plt.ylabel('Amplitude')
         plt.savefig('AmpVSTime.png')
 
         # Plot Control Signal vs Time
         plt.figure()
         plt.plot(time, self.data_log["control_signal"])
-        plt.title('Control Signal vs Time')
-        plt.xlabel('Time (episodes)')
+        plt.title('Control Signal vs Time ' + algo)
+        plt.xlabel('Time (steps)')
         plt.ylabel('Control Signal')
         plt.savefig('CtrlSigVSTime.png')
 
