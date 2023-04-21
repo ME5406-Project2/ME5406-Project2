@@ -29,9 +29,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/base_link.STL" />
       </geometry>
       <material
-        name="">
+        name="orange">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="1 0.384 0.110 1" />
       </material>
     </visual>
     <collision>
@@ -69,9 +69,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/flu_link.STL" />
       </geometry>
       <material
-        name="">
+        name="orange">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="1 0.384 0.110 1" />
       </material>
     </visual>
     <collision>
@@ -129,9 +129,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/fll_link.STL" />
       </geometry>
       <material
-        name="">
+        name="black">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.235 0.235 0.235 1" />
       </material>
     </visual>
     <collision>
@@ -189,9 +189,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/fru_link.STL" />
       </geometry>
       <material
-        name="">
+        name="orange">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="1 0.384 0.110 1" />
       </material>
     </visual>
     <collision>
@@ -249,9 +249,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/frl_link.STL" />
       </geometry>
       <material
-        name="">
+        name="black">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.235 0.235 0.235 1" />
       </material>
     </visual>
     <collision>
@@ -309,9 +309,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/blu_link.STL" />
       </geometry>
       <material
-        name="">
+        name="orange">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="1 0.384 0.110 1" />
       </material>
     </visual>
     <collision>
@@ -369,9 +369,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/bll_link.STL" />
       </geometry>
       <material
-        name="">
+        name="black">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.235 0.235 0.235 1" />
       </material>
     </visual>
     <collision>
@@ -429,9 +429,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/bru_link.STL" />
       </geometry>
       <material
-        name="">
+        name="orange">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="1 0.384 0.110 1" />
       </material>
     </visual>
     <collision>
@@ -489,9 +489,9 @@
           filename="package://Assem1_v5.SLDASM/meshes/brl_link.STL" />
       </geometry>
       <material
-        name="">
+        name="black">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.235 0.235 0.235 1" />
       </material>
     </visual>
     <collision>

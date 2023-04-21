@@ -4,14 +4,19 @@ Title: **CPG-Based Terrain-Aware Locomotion with Deep Reinforcement Learning**
 
 <br>For this project, we aim to train our quadrupedal robot make it terrain aware whereby the robot is able to adapt its gait based on the terrain it is in. The code is written in Python 3.8.2 and the following Python libraries are required for our code to work.
 
-    <insert requirements>
+    ale_py==0.7.4
+    gym==0.21.0
+    numpy==1.24.2
+    pybullet==3.2.5
+    sb3_contrib==1.7.0
+    stable_baselines3==1.7.0
+    torch==2.0.0
     
 
 The code suppots the following algorithms
 - SAC
 - A2C
 - TD3
-- TRPO
 - PPO
 - DDPG
 
@@ -34,7 +39,7 @@ This file contains the custom  feature class (LSTM) for each algorithm.
 This file contains the DiscreteWrapper Class. It converts the box (continuous outputs in range [-1, 1]) into MultiDiscrete actions as required by the environment.
 
 # How to train a model
-Open up `Train.py` to edit hyperparameters at the bottom.<br>
+To train the model from scratch, open up `Train.py` to edit hyperparameters at the bottom.<br>
 
     if __name__ == "__main__":
         Train(
@@ -50,13 +55,20 @@ Open up `Train.py` to edit hyperparameters at the bottom.<br>
             save_freq = 10000, eval_freq = 5000
             ):
 
+To start training from an existing model,  enter the relative path to the trained model in the load path parameter.<br>
+
+    if __name__ == "__main__":
+        Train("PPO", num_timesteps=2e6, training_name="unnamed_training2", 
+                load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip"
+                )
+
 Once done, save the file and run the python code <br>
 
     > python Train.py
 
 The trained models will be saved in `./trained_models/[name of training]` as a .zip file. The model that produces the best results during evaluation will be saved in `./trained_models/[name of training]/best_model/` as `best_model.zip`.
 
-# How to validate / run trained models
+# How to run trained models
 Open up `Validation.py` to edit the parameters at the bottom.<br>
 
     if __name__ == "__main__":

@@ -6,7 +6,6 @@ import time
 import numpy as np
 from Surface import Surface
 from gym.spaces import MultiDiscrete
-from gym import GoalEnv
 import random
 
 class LeggedEnv(gym.Env):
@@ -360,7 +359,7 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         
-        # Randomize environment to be full mud or no mud
+        # Randomize environment to be fully mud or no mud
         if self.randomize_env: 
             # create a multi-body object for the mud
             if random.randint(0,1):
@@ -369,7 +368,7 @@ class LeggedEnv(gym.Env):
                 block_position = [1, 0, 0]
             half_size = [5, 2, 0.15]
         else:
-            # 50% of env is convered in mud, 50% no mud
+            # partially convered in mud
             block_position = [4, 0, 0]
             half_size = [2.5, 2, 0.15]
         
@@ -920,7 +919,7 @@ class LeggedEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    env = LeggedEnv(use_gui=True)
+    env = LeggedEnv(use_gui=True, randomize_env=False)
     env.reset()
     done = False
     t = 0

@@ -332,7 +332,6 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Sample training code using PPO
     Train(
             algorithm = "PPO", num_vectorized_env = 10,
