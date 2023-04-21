@@ -309,7 +309,7 @@ class LeggedEnv(gym.Env):
             done = False
 
         reward = self.get_reward(control_params)
-        # print(self.contact_dist, control_params)
+        print(self.contact_dist, control_params)
         # if isinstance(reward, np.ndarray):
         #     reward = reward[0]
         # self.reward += 0
