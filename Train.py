@@ -332,9 +332,17 @@ def copy_log_file(load_path, dst, algorithm):
 
 # testing code
 if __name__ == "__main__":
-    # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
-    # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    #Train("SAC", num_timesteps=1e6, training_name='SACTEST')
-    #Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
-    Train("SAC", num_timesteps=1e6, training_name='test')
+    # Sample training code using PPO
+    Train(
+            algorithm = "PPO", num_vectorized_env = 10,
+            load_path = None,
+            num_timesteps = 1e6, num_features = 64,
+            show_net_arch = False,
+            use_LSTM = True, verbose = 0, 
+            share_features_extractor = True,
+            lstm_layers = 1, lstm_dropout = 0.0,
+            learning_rate = 0.0001, gamma = 0.99, batch_size = 256,
+            training_name = "unnamed_training", 
+            save_freq = 10000, eval_freq = 5000
+        )
