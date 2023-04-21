@@ -484,14 +484,14 @@ class LeggedEnv(gym.Env):
         if self.check_no_feet_on_ground():
             self.cpg_cnt+=1
 
-        freq = 2
-        amp = 0.5
+        freq = 3
+        amp = 0.3
         leg_positions = self.cpg_position_controller(t, freq, amp)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
         observation = self.get_observation()
         cmd_joint_pos = [0] * 8
-
+        
         for idx, joint in enumerate(self.upper_joint_indeces):
             cmd_joint_pos[joint] = -leg_positions[idx]
 
@@ -505,6 +505,11 @@ class LeggedEnv(gym.Env):
                                     p.POSITION_CONTROL, targetPositions=-np.array(leg_positions))
         # p.setJointMotorControlArray(self.robot, range(len(self.actuators)), 
         #                            p.VELOCITY_CONTROL, targetVelocities=[10, 5, 10, 10, 10, 0, -5, -5])
+        
+        self.data_log["freq"].append(freq) #todo
+        self.data_log["amp"].append(amp)
+        self.data_log["control_signal"].append(cmd_joint_pos[0])
+
         p.stepSimulation()
         time.sleep(1/240)
         self.env_step_count += 1
@@ -523,6 +528,7 @@ class LeggedEnv(gym.Env):
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
+            self.plot_graph()
             # print("GOAL REACHED")
             # print("Episode Reward",self.reward)
             # print("Episode Length", self.env_step_count)
@@ -930,7 +936,7 @@ class LeggedEnv(gym.Env):
         return total_mass*9.81
 
     def plot_graph(self):
-        algo = "(SAC)"
+        algo = "(CPG)"
         time = [i+1 for i in range(len(self.data_log["freq"]))]
         # Plot freq against time
         plt.figure()
@@ -959,7 +965,7 @@ class LeggedEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    env = LeggedEnv(use_gui=True)
+    env = LeggedEnv(use_gui=True, randomize_env=False)
     env.reset()
     done = False
     t = 0
@@ -967,6 +973,7 @@ if __name__ == "__main__":
         # print("on_ground", env.check_no_feet_on_ground())
         obs, reward, done = env.cpg_step(t)
         t+=(1/240)
+    
     # env.process_and_cmd_vel()
     
 
