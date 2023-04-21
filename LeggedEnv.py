@@ -275,6 +275,7 @@ class LeggedEnv(gym.Env):
         
         # Step the simulation
         p.stepSimulation()
+        time.sleep(1/240)
         self.env_step_count += 1
         
         # Get the observation
@@ -358,12 +359,12 @@ class LeggedEnv(gym.Env):
         
     def generate_terrain(self):
         # create a collision shape for the mud
-        half_size = [5, 2, 0.15]
+        half_size = [2, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
         # create a multi-body object for the mud
         if random.randint(0,1):
-            block_position = [15, 0, 0]
+            block_position = [4, 0, 0]
         else:
             block_position = [1, 0, 0]
         # block_position = [15,0,0]
@@ -464,8 +465,8 @@ class LeggedEnv(gym.Env):
         if self.check_no_feet_on_ground():
             self.cpg_cnt+=1
 
-        freq = 2
-        amp = 0.5
+        freq = 3
+        amp = 0.3
         leg_positions = self.cpg_position_controller(t, freq, amp)
         # leg_velocities = [pos / (1/240) for pos in leg_positions]
         # print(max(leg_velocities))
@@ -913,13 +914,15 @@ class LeggedEnv(gym.Env):
 
 if __name__ == "__main__":
     env = LeggedEnv(use_gui=True)
-    env.reset()
-    done = False
-    t = 0
-    while not done:
-        # print("on_ground", env.check_no_feet_on_ground())
-        obs, reward, done = env.cpg_step(t)
-        t+=(1/240)
+    for i in range(10):
+        env.reset()
+        done = False
+        t = 0
+        while not done:
+            # print("on_ground", env.check_no_feet_on_ground())
+            obs, reward, done = env.cpg_step(t)
+            t+=(1/240)
+    
     # env.process_and_cmd_vel()
     
 
