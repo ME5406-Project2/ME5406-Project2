@@ -1,6 +1,6 @@
 from stable_baselines3.common.evaluation import evaluate_policy
 import string
-from stable_baselines3 import PPO, SAC, DDPG, TD3
+from stable_baselines3 import PPO, SAC, DDPG, TD3, A2C
 from sb3_contrib import TRPO
 from Train import make_dummy_env, make_env
 
@@ -39,6 +39,10 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     elif (algorithm=="TD3"):
         # Defining the TD3 model
         model = TD3.load(path=save_path, env=env)
+    
+    elif (algorithm=="A2C"):
+        # Defining the A2C model
+        model = A2C.load(path=save_path, env=env)
 
     else:
         raise ValueError("Invalid algorithm name: {}".format(algorithm))
@@ -61,7 +65,8 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
 # testing code
 if __name__ == "__main__":
     
-    
+    # Validation("A2C", "./trained_models/SACTEST/SACTEST_20000_steps.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/training73_SDe/training73_largeA_rand_SAC_SDE_550000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/SAC_test_260000_steps.zip", eval_eps=1)
-    Validation("SAC", "./trained_models/SACtest2/best_model/best_model.zip", eval_eps=1)
+    #Validation("SAC", "./trained_models/training31_box_0.8/best_model.zip", eval_eps=1)

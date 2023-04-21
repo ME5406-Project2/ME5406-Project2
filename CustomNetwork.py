@@ -53,3 +53,8 @@ class Custom_SAC_Policy(SACPolicy):
 class Custom_DDPG_Policy(TD3Policy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, features_extractor_class=LSTMFeatureExtractor)
+
+# create a A2C policy with LSTM as feature extractor
+class Custom_A2C_Policy(ActorCriticPolicy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, features_extractor_class=LSTMFeatureExtractor)
