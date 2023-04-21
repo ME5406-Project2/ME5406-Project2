@@ -260,12 +260,14 @@ def Train(algorithm: string, num_vectorized_env: int = 10,
     else:
         # eval_env = make_env()
         if (algorithm == "TD3" or algorithm == "DDPG"):
-            env = make_env()
+            eval_env = make_env(randomize_env=False)
         else:
             eval_env = make_vec_env(env_id=LeggedEnv,
                             n_envs=5,
                             vec_env_cls=SubprocVecEnv,
-                            wrapper_class=DiscreteActionWrapper)
+                            wrapper_class=DiscreteActionWrapper,
+                            env_kwargs=dict(randomize_env=False)
+                            )
         # eval_env = make_vec_env(env_id=LeggedEnv,
         #                    n_envs=10,
         #                    vec_env_cls=SubprocVecEnv)
@@ -297,8 +299,8 @@ def make_dummy_env():
     env = DiscreteActionWrapper(env)
     return env
 
-def make_env(use_gui=False):
-    env = LeggedEnv(use_gui=use_gui)
+def make_env(use_gui=False, randomize_env=True):
+    env = LeggedEnv(use_gui=use_gui, randomize_env=randomize_env)
     # discretize actions using wrapper
     # env = VecFrameStack(env, n_stack=4)
     env = DiscreteActionWrapper(env)
@@ -334,6 +336,5 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
     #Train("SAC", num_timesteps=1e6, training_name='SACTEST')
-    Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
-
-    #training11or12
+    #Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
+    Train("SAC", num_timesteps=1e6, training_name='test')
