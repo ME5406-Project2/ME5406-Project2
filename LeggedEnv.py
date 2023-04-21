@@ -9,6 +9,18 @@ from gym.spaces import MultiDiscrete
 from gym import GoalEnv
 import random
 
+import csv
+
+a = open('/home/felix/test/testsac.csv', 'w')
+wrt = csv.writer(a)
+# wrt.writerow('1')
+
+# file = open('test.csv','w')
+# file.write('x' +"\n")
+# file.write('x' +"\n")
+
+
+
 class LeggedEnv(gym.Env):
     """
     LeggedEnv Robot Environment
@@ -290,6 +302,8 @@ class LeggedEnv(gym.Env):
         # Reached goal
         goal_penalty = 0
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+            wrt.writerow('S')
+            print("Success")
             print("Goal Reached!")
             print("Control params", self.contact_dist, control_params)
             # if abs(self.contact_dist) > 0.0:
@@ -300,10 +314,14 @@ class LeggedEnv(gym.Env):
             #         goal_penalty = -600
             done = True
         elif self.check_is_unrecoverable():
+            wrt.writerow('F')
+            print("Failed")
             done = True
             self.is_dead = True
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
+            wrt.writerow('F')
+            print("Failed")
             done = True
         else:
             done = False
@@ -502,14 +520,22 @@ class LeggedEnv(gym.Env):
         # Terminating conditions
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
+            # with open('home/felix/test/SAC.csv', 'w') as f:
+            #     writer = csv.writer(f)  
+            #     writer.writerow("S")
             done = True
             print("GOAL REACHED")
             print("Episode Reward",self.reward)
             print("Episode Length", self.env_step_count)
+            
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
+            # with open('home/felix/test/SAC.csv', 'w') as f:
+            #     writer = csv.writer(f)  
+            #     writer.writerow("F")
             done = True
             print('EPISODE LENGTH EXCEEDED')
+            
         else:
             done = False
 

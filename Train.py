@@ -333,7 +333,7 @@ if __name__ == "__main__":
     # Train("PPO", num_timesteps=5e4)
     # Train("PPO", num_timesteps=2e4, training_name="unnamed_training2", load_path="./trained_models/unnamed_training/unnamed_training_50000_steps.zip")
     # Train("SAC", num_timesteps=5e5, training_name='SACtest')
-    #Train("SAC", num_timesteps=1e6, training_name='SACTEST')
-    Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
+    Train("SAC", num_timesteps=5e5, training_name='SACTEST', num_vectorized_env=1)
+    # Train("DDPG", num_timesteps=1e6, training_name='DDPGTEST')
 
     #training11or12
