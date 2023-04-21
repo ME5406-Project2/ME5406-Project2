@@ -17,7 +17,7 @@ class LeggedEnv(gym.Env):
     rectangular goal-space in the workspace.
     
     """
-    def __init__(self, use_gui=False):
+    def __init__(self, use_gui=False, randomize_env=True):
 
         # Connect to PyBullet client
         if use_gui:
@@ -103,6 +103,8 @@ class LeggedEnv(gym.Env):
             spinning_friction=1.0,
             rolling_friction=0.0)
         
+        self.randomize_env = randomize_env
+
         # Spawn the robot and goal box in simulation
         self.spawn_robot()
         self.generate_goal()
@@ -301,8 +303,8 @@ class LeggedEnv(gym.Env):
         # Reached goal
         goal_penalty = 0
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
-            print("Goal Reached!")
-            print("Control params", self.contact_dist, control_params)
+            # print("Goal Reached!")
+            # print("Control params", self.contact_dist, control_params)
             # if abs(self.contact_dist) > 0.0:
             #     if control_params[0] > 2.2 or control_params[1] < 0.45:
             #         goal_penalty = -600
@@ -368,17 +370,23 @@ class LeggedEnv(gym.Env):
         self.generate_terrain()
         
     def generate_terrain(self):
+        
+        # Randomize environment to be full mud or no mud
+        if self.randomize_env: 
+            # create a multi-body object for the mud
+            if random.randint(0,1):
+                block_position = [15, 0, 0]
+            else:
+                block_position = [1, 0, 0]
+            half_size = [5, 2, 0.15]
+        else:
+            # 50% of env is convered in mud, 50% no mud
+            block_position = [4, 0, 0]
+            half_size = [2.5, 2, 0.15]
+        
         # create a collision shape for the mud
-        half_size = [5, 2, 0.15]
         block_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_size)
 
-        # create a multi-body object for the mud
-        if random.randint(0,1):
-            block_position = [15, 0, 0]
-        else:
-            block_position = [1, 0, 0]
-        # block_position = [15,0,0]
-        # block_position = [1, 0, 0]
         block_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.mud = p.createMultiBody(
             baseMass=0,
@@ -514,13 +522,13 @@ class LeggedEnv(gym.Env):
         # Reached goal
         if self.xyz_obj_dist_to_goal() < self.termination_pos_dist:
             done = True
-            print("GOAL REACHED")
-            print("Episode Reward",self.reward)
-            print("Episode Length", self.env_step_count)
+            # print("GOAL REACHED")
+            # print("Episode Reward",self.reward)
+            # print("Episode Length", self.env_step_count)
         # Episode timeout
         elif self.env_step_count >= self.max_steps:
             done = True
-            print('EPISODE LENGTH EXCEEDED')
+            # print('EPISODE LENGTH EXCEEDED')
         else:
             done = False
 

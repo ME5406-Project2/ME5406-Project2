@@ -16,8 +16,10 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
     # create environment
     if use_dummy:
         env = make_dummy_env()
+        eval_env = env
     else:
-        env = make_env(use_gui=True)
+        env = make_env(use_gui=True, randomize_env=False)
+        eval_env = make_env(use_gui=False, randomize_env=False)
 
     if (algorithm=="DDPG"):
         # Defining the DDPG model
@@ -48,7 +50,7 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
         raise ValueError("Invalid algorithm name: {}".format(algorithm))
     
     # Evaluate policy
-    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=eval_eps)
+    mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=eval_eps)
     print("Mean rewards =", mean_reward)
     print("Std rewards =", std_reward)
 
@@ -65,7 +67,16 @@ def Validation(algorithm: string, save_path: string, eval_eps: int = 15):
 # testing code
 if __name__ == "__main__":
     
-    Validation("A2C", "./trained_models/SACTEST/SACTEST_20000_steps.zip", eval_eps=1)
+    # Validation("A2C", "./trained_models/SACTEST/SACTEST_20000_steps.zip", eval_eps=1)
+    Validation("SAC", "./trained_models/training73_SDe/training73_largeA_rand_SAC_SDE_550000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/best_model/best_model.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/SAC_test/SAC_test_260000_steps.zip", eval_eps=1)
     #Validation("SAC", "./trained_models/training31_box_0.8/best_model.zip", eval_eps=1)
+    # Best model for SAC (best model out of all algorithms)
+    # Validation("SAC", "./trained_models/training70_rand_CPG/best_model/best_model.zip", eval_eps=5)
+    # Best model for PPO
+    # Validation("PPO", "./trained_models/training70_rand_PPO/best_model/best_model.zip", eval_eps=5)
+    # Best model for A2C
+    # Validation("A2C", "./trained_models/training72_rand_A2C/best_model/best_model.zip", eval_eps=5)
+    # Best model for TD3
+    # Validation("TD3", "./trained_models/training72_rand_TD3/best_model/best_model.zip", eval_eps=5)
